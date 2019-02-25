@@ -1,10 +1,24 @@
 import * as vscode from "vscode";
-import * as path from "path"
-import * as fs from "fs"
-import * as absprovider from "./project_view_provider"
-import * as view from "../View/item"
-import * as model from "../model/project"
-import * as event from "./view_provider_events"
+import * as path from "path";
+import * as fs from "fs";
+import * as absprovider from "./project_view_provider";
+import * as view from "../View/item";
+import * as model from "../model/project";
+import * as event from "./view_provider_events";
+
+
+function GetBuildTerminal(): vscode.Terminal {
+    let terminal : any = undefined;
+    vscode.window.terminals.forEach(t => {
+         if(t.name === "build") {
+              terminal =  t;
+        } 
+    });
+    if (!terminal) {
+        terminal = vscode.window.createTerminal("build");
+    }
+    return terminal;
+}
 
 abstract class AbsCommand {
     private provider_ : absprovider.TreeViewProviderProjects
@@ -21,8 +35,9 @@ class OpenFileCommand extends AbsCommand{
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-        if (item.GetItemType() != view.ItemType.FILE)
+        if (item.GetItemType() !== view.ItemType.FILE) {
             return;
+        }
         var full_path = item.GetModel().GetFullName();
         let options: vscode.TextDocumentShowOptions = {
             preview:  false,
@@ -39,17 +54,54 @@ class BuildProjectCommand extends AbsCommand{
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-
+        if (item.GetItemType() === view.ItemType.PROJECT) {
+            // build project
+            var project_model = item.GetModel() as model.Project;
+            var cmd = project_model.GetBuildTask().command;
+            const terminal = GetBuildTerminal();
+            terminal.show();
+            terminal.sendText(cmd, true);
+        } else {
+            return;
+        }
     }
 }
 
-class CleanProjectCommand extends AbsCommand{
+class RebuildProjectCommand extends AbsCommand{
     constructor(provider: absprovider.TreeViewProviderProjects) {
         super(provider)
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
+        if (item.GetItemType() === view.ItemType.PROJECT) {
+            // build project
+            var project_model = item.GetModel() as model.Project;
+            const terminal = GetBuildTerminal();
+            terminal.show();
+            terminal.sendText(project_model.GetCleanTask().command, true);
+            terminal.sendText(project_model.GetBuildTask().command, true);
+        } else {
+            return;
+        }
+    }
+}
 
+class CleanProjectCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        if (item.GetItemType() === view.ItemType.PROJECT) {
+            // clean project
+            var project_model = item.GetModel() as model.Project;
+            var cmd = project_model.GetCleanTask().command;
+            const terminal = GetBuildTerminal();
+            terminal.show();
+            terminal.sendText(cmd, true);
+        } else {
+            return;
+        }
     }
 }
 
@@ -59,12 +111,12 @@ class ChangeConfigCommand extends AbsCommand{
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-        if (!vscode.window.activeTextEditor) return
-        var file_path = vscode.window.activeTextEditor.document.fileName
-        var v = event.TreeViewProviderProjectsEvents.all_opened_doc.get(file_path)
-        if (!v) return
-        if (v.GetItemType() != view.ItemType.FILE) return
-        var group = v.GetParent()
+        if (!vscode.window.activeTextEditor) { return; }
+        var file_path = vscode.window.activeTextEditor.document.fileName;
+        var v = event.GetFileFromCache(file_path);
+        if (!v) { return; }
+        if (v.GetItemType() !== view.ItemType.FILE) { return; }
+        var group = v.GetParent();
         if (!group) return
         var project = group.GetParent()
         if (!project) return
@@ -90,10 +142,11 @@ export class TreeViewProviderProjectsCommands {
     private commands_ : Map<string, AbsCommand> = new Map<string, AbsCommand>();
 
     constructor(provider: absprovider.TreeViewProviderProjects) {
-        this.commands_.set("OpenFile", new OpenFileCommand(provider))
-        this.commands_.set("BuildProject", new BuildProjectCommand(provider))
-        this.commands_.set("CleanProject", new CleanProjectCommand(provider))
-        this.commands_.set("ChangeConfig", new ChangeConfigCommand(provider))
+        this.commands_.set("OpenFile", new OpenFileCommand(provider));
+        this.commands_.set("BuildProject", new BuildProjectCommand(provider));
+        this.commands_.set("RebuildProject", new RebuildProjectCommand(provider));
+        this.commands_.set("CleanProject", new CleanProjectCommand(provider));
+        this.commands_.set("ChangeConfig", new ChangeConfigCommand(provider));
 
     }
 

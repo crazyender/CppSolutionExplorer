@@ -30,6 +30,39 @@
 					"name": "C++ Projects"
 				}
 			]
+		},
+		"commands": [
+			{
+				"command": "CppSolutionExplorer.BuildProject",
+				"title": "Build"
+			},
+			{
+				"command": "CppSolutionExplorer.RebuildProject",
+				"title": "Rebuild"
+			},
+			{
+				"command": "CppSolutionExplorer.CleanProject",
+				"title": "Clean"
+			}
+		],
+		"menus": {
+			"view/item/context": [
+				{
+                    "command": "CppSolutionExplorer.BuildProject",
+                    "when": "view == CppSolutionView && viewItem == project",
+                    "group": "1_build"
+				},
+				{
+                    "command": "CppSolutionExplorer.RebuildProject",
+                    "when": "view == CppSolutionView && viewItem == project",
+                    "group": "1_build"
+				},
+				{
+                    "command": "CppSolutionExplorer.CleanProject",
+                    "when": "view == CppSolutionView && viewItem == project",
+                    "group": "2_clean"
+                }
+			]
 		}
 	},
 	"scripts": {
@@ -44,8 +77,6 @@
 		"vscode": "^1.1.28",
 		"tslint": "^5.12.1",
 		"@types/node": "^10.12.21",
-		"@types/mocha": "^2.2.42",
-		"copy-paste": "^1.1.30",
-		"@types/copy-paste": "^1.1.30"
+		"@types/mocha": "^2.2.42"
 	}
 }

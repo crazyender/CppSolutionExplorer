@@ -16,25 +16,28 @@ import * as event from "./view_provider_events"
 */
 export function CreateTreeView() {
     var root_path = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./";
-    var gn_file = path.join(root_path, "gn.json");
     var provider = null;
 
-    if (fs.existsSync(gn_file)) {
-        return new gn.TreeViewProvider([gn_file])
-    } else {
-        var sln_files : string[] = [];
-        fs.readdirSync(root_path).forEach(file => {
-            var full_path = path.join(root_path, file);
-            var ext = path.extname(full_path);
-            if (ext == ".sln") {
-                sln_files.push(full_path);
-            }
-        });
+    var gn_files : string[] = [];
+    var sln_files : string[] = [];
+    fs.readdirSync(root_path).forEach(file => {
+        var full_path = path.join(root_path, file);
+        var ext = path.extname(full_path);
+        if (ext === ".sln") {
+            sln_files.push(full_path);
+        }
 
-        if (sln_files.length)
-            return new vs.TreeViewProvider(sln_files)
-        else
-            return new Null.TreeViewProvider([])
+        if (ext === ".json") {
+            gn_files.push(full_path)
+        }
+    });
+
+    if (gn_files.length) {
+        return new gn.TreeViewProvider(gn_files)
+    } else if (sln_files.length) {
+        return new vs.TreeViewProvider(sln_files)
+    } else {
+        return new Null.TreeViewProvider([])
     }
 
 }

@@ -30,17 +30,45 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
     private top_level_item_: item.ProjectViewItem[] = [];
 
     constructor(files: string[]) {
-        var all_projects : Map<string, model.Project[]> = new Map<string, model.Project[]>()
+        // write launch.json and tasks.json
+        var all_launchs : model.LaunchConfig = new model.LaunchConfig()
+        var all_builds : model.BuildConfig = new model.BuildConfig()
+
         for(var i = 0; i < files.length; i++) {
             var name = path.basename(files[i])
             var projects = this.GetProjects(files[i])
-            all_projects.set(name, projects)
+            projects.forEach((value, index, self) => {
+                all_builds.tasks.push(value.GetBuildTask());
+                all_builds.tasks.push(value.GetCleanTask());
+                
+                var launch = value.GetLaunchConfig();
+                if (launch) {
+                    all_launchs.configurations.push(launch);
+                }
+            });
+
             this.top_level_item_.push(item.CreateTopLevel(name, projects));
         }
 
-        // write launch.json and tasks.json
-        var all_launchs : model.LaunchConfig[] = []
-        var all_builds : model.BuildConfig[] = []
+        var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./"
+        var json_root = path.join(json_root, ".vscode")
+        if (!fs.existsSync(json_root)) {
+            fs.mkdirSync(json_root)
+        }
+        var tasks = path.join(json_root, "tasks.json")
+        if (fs.existsSync(tasks)) {
+            fs.unlinkSync(tasks)
+        }
+        var launch = path.join(json_root, "launch.json")
+        if (fs.existsSync(launch)) {
+            fs.unlinkSync(launch);
+        }
+        
+        fs.writeFile(tasks, JSON.stringify(all_builds, undefined, "  "), (err) => {
+            fs.writeFile(launch, JSON.stringify(all_launchs, undefined, "  "), (err) => {
+            });
+        });
+
     }
 
     protected abstract  GetProjects(root_file: string) : model.Project[];

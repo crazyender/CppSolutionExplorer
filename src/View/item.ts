@@ -44,9 +44,10 @@ class FileLevelView extends ProjectViewItem {
         super(file.GetName(), ItemType.FILE, parent);
         this.file_ = file;
         this.parent_ = parent;
-        this.tooltip = file.GetFullName()
-        this.label = file.GetName()
-        this.id = file.GetFullName()
+        this.tooltip = file.GetFullName();
+        this.label = file.GetName();
+        this.id = file.GetFullName();
+        this.contextValue = "file";
         this.command = {
             command: 'CppSolutionExplorer.OpenFile',
             arguments: [this],
@@ -81,7 +82,8 @@ class FileLevelView extends ProjectViewItem {
                 break;
         }
         this.iconPath = path.join(__filename, "..", "..", "..", "icons", icon_name);
-        event.TreeViewProviderProjectsEvents.all_opened_doc.set(file.GetFullName(), this)
+        var full_name = file.GetFullName().split("\\").join("/").trim();
+        event.AddFileCache(full_name, this);
     }
 
     GetChildren() : ProjectViewItem[] {
@@ -107,8 +109,9 @@ class FileGroupLevelView extends ProjectViewItem {
         this.group_ = group;
         this.parent_ = parent;
         var files = group.GetFiles();
-        this.label = group.GetName()
-        this.id = parent.GetModel().GetFullName() + "_" + group.GetName()
+        this.label = group.GetName();
+        this.id = parent.GetModel().GetFullName() + "_" + group.GetName();
+        this.contextValue = "filegroup";
         this.children_ = [];
         for(var i = 0; i < files.length; i++) {
             this.children_.push(new FileLevelView(files[i], this));
@@ -141,7 +144,8 @@ class ProjectLevelView extends ProjectViewItem {
         var groups = project.GetGroups();
         this.tooltip = project.GetFullName();
         this.label = project.GetName();
-        this.id = project.GetFullName()
+        this.id = project.GetFullName();
+        this.contextValue = "project";
         this.children_ = [];
         for(var i = 0; i < groups.length; i++) {
             this.children_.push(new FileGroupLevelView(groups[i], this));
@@ -175,6 +179,7 @@ class TopLevelView extends ProjectViewItem {
         }
 
         this.iconPath = path.join(__filename, "..", "..", "..", "icons", "sln.svg");
+        this.contextValue = "toplevel";
     }
 
     GetChildren() : ProjectViewItem[] {

@@ -12,6 +12,8 @@ export function activate(context: vscode.ExtensionContext) {
     cpp_commands = factory.RegisterCommand(provider)
     cpp_events = factory.RegisterEvents()
     vscode.window.registerTreeDataProvider('CppSolutionView', provider);
+
+    vscode.commands.executeCommand("CppSolutionView.ChangeConfig");
 }
 
 // this method is called when your extension is deactivated
