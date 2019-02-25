@@ -47,7 +47,13 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
                 }
             });
 
-            this.top_level_item_.push(item.CreateTopLevel(name, projects));
+            var sln_name = name;
+            var ext = path.extname(sln_name);
+            if (ext !== "") {
+                sln_name = sln_name.replace(ext, "")
+            }
+
+            this.top_level_item_.push(item.CreateTopLevel(sln_name, projects));
         }
 
         var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./"

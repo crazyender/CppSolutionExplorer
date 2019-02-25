@@ -103,6 +103,7 @@ export class FileGroup  extends AbsModel{
 export class Project  extends AbsModel{
     private project_type_: string
     private files_: Map<string, string[]>
+    private raw_files_ : string[] = []
     private defines_: string[];
     private include_dirs_: string[];
     private build_command_: string;
@@ -128,6 +129,11 @@ export class Project  extends AbsModel{
         this.project_type_ = project_type;
         this.root_dir_ = root_dir;
         this.binary_ = binary;
+        this.files_.forEach((value, key, self) => {
+            value.forEach((file, index, self)=> {
+                this.raw_files_.push(file)
+            });
+        });
     }
 
     GetType() {
@@ -198,6 +204,10 @@ export class Project  extends AbsModel{
 
     GetIncludePathes() {
         return this.include_dirs_;
+    }
+
+    GetFiles() {
+        return this.raw_files_;
     }
 
 

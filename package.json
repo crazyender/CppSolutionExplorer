@@ -43,10 +43,25 @@
 			{
 				"command": "CppSolutionExplorer.CleanProject",
 				"title": "Clean"
+			},
+			{
+				"command": "CppSolutionExplorer.FindFile",
+				"title": "Find files",
+				"icon": "icons/find.svg"
+			},
+			{
+				"command": "CppSolutionExplorer.FindInSolution",
+				"title": "Search in files",
+				"icon": "icons/search.svg"
 			}
 		],
 		"menus": {
 			"view/item/context": [
+				{
+					"command": "CppSolutionExplorer.FindFile",
+					"when": "view == CppSolutionView && viewItem == toplevel",
+					"group": "inline"
+				},
 				{
                     "command": "CppSolutionExplorer.BuildProject",
                     "when": "view == CppSolutionView && viewItem == project",
@@ -63,7 +78,13 @@
                     "group": "2_clean"
                 }
 			]
-		}
+		},
+		"keybindings" : [
+			{
+                "command": "CppSolutionExplorer.FindInSolution",
+                "key": "alt+shift+f"
+            }
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
