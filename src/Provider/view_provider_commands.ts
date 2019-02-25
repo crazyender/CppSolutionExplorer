@@ -210,7 +210,7 @@ class FindInSolutionCommand extends AbsCommand{
                     }
                     lines.forEach((line, index, self) => {
                         if (line.indexOf(search_value) !== -1) {
-                            panel.appendLine("file://" + file + " (" + index + "): " + line);
+                            panel.appendLine("file://" + file + "#L" + (index+1) + " : " + line);
                             found = true;
                             record_count++;
                         }

@@ -20,6 +20,8 @@ export function GetFileGroupNameFromFile(file: string) : string {
         case ".hpp":
         case ".hxx":
             return "Header Files";
+        case ".java":
+            return "Java Files";
         default:
             return "Object Files";
     }

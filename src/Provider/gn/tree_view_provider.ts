@@ -25,8 +25,11 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
                 continue;
             }
             var name = gn_target_name;
+            if (name.indexOf("(") != -1) {
+                name = name.substr(0, name.indexOf("("))
+            }
             if (name.lastIndexOf(":") !== -1) {
-                var parts = gn_target_name.split(":");
+                var parts = name.split(":");
                 name = parts[parts.length - 1];
             }
 
@@ -56,6 +59,17 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         if (gn_target_obj.hasOwnProperty("inputs")) {
             sources = sources.concat(gn_target_obj.inputs)
         }
+
+        sources = sources.filter((file, index, self)=> {
+            var ext = path.extname(file);
+            if (ext === ".c" || ext === ".cpp" || ext === ".cc" ||
+                ext === ".cxx" || ext === ".h" || ext === ".hh" ||
+                ext === ".hpp" || ext === ".m" || ext === ".mm" ||
+                ext === ".java") {
+                    return true;
+                }
+            return false;
+        })
 
         for (var i = 0; i < sources.length; i++) {
             var source = sources[i]
@@ -127,13 +141,32 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         return gn_target_obj.type
     }
 
+    private MajorTarget(gn_target_obj: any) : boolean{
+        if (gn_target_obj.hasOwnProperty("is_major")) {
+            if (gn_target_obj.is_major) { return true; }
+        }
+
+        if (gn_target_obj.hasOwnProperty("complete_static_lib")) {
+            if (gn_target_obj.complete_static_lib) { return true; }
+        }
+
+        return false;
+    }
+
     private ValidTarget(gn_target_obj: any) : boolean {
         var t = this.GetType(gn_target_obj)
-        if (t === "static_library" || t === "source_set" ||
-            t === "shared_library" || t === "loadable_module" ||
+        if (t === "shared_library" || t === "loadable_module" ||
             t === "executable") {
+            return true;
+        }
+
+        if (this.MajorTarget(gn_target_obj)) {
+            return true;
+        }
+
+        if (t === "static_library" || t === "source_set") {
             return this.GetSources(gn_target_obj).size !== 0;
-        } else if (t === "action_foreach") {
+        } else if (t === "action_foreach" || t === "action") {
             return this.GetSources(gn_target_obj).size !== 0;
         } else {
             return false;

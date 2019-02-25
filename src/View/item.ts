@@ -75,6 +75,9 @@ class FileLevelView extends ProjectViewItem {
             case ".hxx":
                 icon_name = "hpp.svg";
                 break;
+            case ".java":
+                icon_name = "java.svg";
+                break;
             case ".m":
             case ".mm":
             default:
