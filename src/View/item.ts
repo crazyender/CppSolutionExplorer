@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as model from "../Model/project";
-import * as event from "../Provider/view_provider_events"
+import * as event from "../Provider/view_provider_events";
 
 export enum ItemType {
     TOP_LEVEL,
@@ -54,8 +54,8 @@ class FileLevelView extends ProjectViewItem {
             title: 'Open File'
         };
     
-        var ext = path.extname(file.GetName())
-        var icon_name = ""
+        var ext = path.extname(file.GetName());
+        var icon_name = "";
         switch(ext) {
             case ".c":
                 icon_name = "c.svg";
@@ -81,7 +81,7 @@ class FileLevelView extends ProjectViewItem {
             case ".m":
             case ".mm":
             default:
-                icon_name = "file.svg"
+                icon_name = "file.svg";
                 break;
         }
         this.iconPath = path.join(__filename, "..", "..", "..", "icons", icon_name);
@@ -98,7 +98,7 @@ class FileLevelView extends ProjectViewItem {
     }
 
     GetModel() {
-        return this.file_
+        return this.file_;
     }
 }
 
@@ -131,7 +131,7 @@ class FileGroupLevelView extends ProjectViewItem {
     }
 
     GetModel() {
-        return this.group_
+        return this.group_;
     }
 }
 
@@ -165,20 +165,20 @@ class ProjectLevelView extends ProjectViewItem {
     }
 
     GetModel() {
-        return this.project_
+        return this.project_;
     }
 }
 
 class TopLevelView extends ProjectViewItem {
     private children_: ProjectViewItem[];
-    private empty_model_: model.Null
+    private empty_model_: model.Null;
 
     constructor(name: string, projects: model.Project[]) {
         super(name, ItemType.TOP_LEVEL, undefined);
-        this.empty_model_ = new model.Null()
+        this.empty_model_ = new model.Null();
         this.children_ = [];
         for(var i = 0; i < projects.length; i++) {
-            this.children_.push(new ProjectLevelView(projects[i], this))
+            this.children_.push(new ProjectLevelView(projects[i], this));
         }
 
         this.iconPath = path.join(__filename, "..", "..", "..", "icons", "sln.svg");
@@ -194,7 +194,7 @@ class TopLevelView extends ProjectViewItem {
     }
 
     GetModel() {
-        return this.empty_model_
+        return this.empty_model_;
     }
 }
 

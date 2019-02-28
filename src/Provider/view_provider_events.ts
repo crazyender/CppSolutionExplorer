@@ -1,13 +1,13 @@
-import * as vscode from "vscode"
-import * as view from "../View/item"
-import * as crypto from "crypto"
+import * as vscode from "vscode";
+import * as view from "../View/item";
+import * as crypto from "crypto";
 
 export class TreeViewProviderProjectsEvents {
     public static all_opened_doc : {[id: string] : view.ProjectViewItem;} = {};
     constructor() {
         vscode.window.onDidChangeActiveTextEditor( e => {
             if (!e) {return;}
-            vscode.commands.executeCommand("CppSolutionExplorer.ChangeConfig")
+            vscode.commands.executeCommand("CppSolutionExplorer.ChangeConfig");
         });
 
         

@@ -63,27 +63,27 @@
 					"group": "inline"
 				},
 				{
-                    "command": "CppSolutionExplorer.BuildProject",
-                    "when": "view == CppSolutionView && viewItem == project",
-                    "group": "1_build"
+					"command": "CppSolutionExplorer.BuildProject",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "1_build"
 				},
 				{
-                    "command": "CppSolutionExplorer.RebuildProject",
-                    "when": "view == CppSolutionView && viewItem == project",
-                    "group": "1_build"
+					"command": "CppSolutionExplorer.RebuildProject",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "1_build"
 				},
 				{
-                    "command": "CppSolutionExplorer.CleanProject",
-                    "when": "view == CppSolutionView && viewItem == project",
-                    "group": "2_clean"
-                }
+					"command": "CppSolutionExplorer.CleanProject",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "2_clean"
+				}
 			]
 		},
-		"keybindings" : [
+		"keybindings": [
 			{
-                "command": "CppSolutionExplorer.FindInSolution",
-                "key": "alt+shift+f"
-            }
+				"command": "CppSolutionExplorer.FindInSolution",
+				"key": "alt+shift+f"
+			}
 		]
 	},
 	"scripts": {
@@ -98,6 +98,7 @@
 		"vscode": "^1.1.28",
 		"tslint": "^5.12.1",
 		"@types/node": "^10.12.21",
-		"@types/mocha": "^2.2.42"
+		"@types/mocha": "^2.2.42",
+		"xml2js": "^0.4.19"
 	}
 }

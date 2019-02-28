@@ -29,6 +29,9 @@ class PropertyConfiguration {
     public name: string = "";
     public includePath: string[] = [];
     public defines: string[] = [];
+    public cStandard: string = "c99";
+    public cppStandard: string = "c++11";
+    public intelliSenseMode: string = "clang-x64";
 }
 
 export class PropertyConfig {
@@ -110,12 +113,15 @@ export class Project  extends AbsModel{
     private clean_command_: string;
     private root_dir_: string;
     private binary_: string;
+    private cpp_standard: string = "11";
+    private c_standard: string = "99";
     constructor(name: string,
                 full_name: string,
                 project_type: string,
                 files : Map<string, string[]>,
                 defines: string[],
                 include_dirs: string[],
+                compile_flags: string[],
                 root_dir: string,
                 binary: string,
                 build_command: string,
@@ -134,10 +140,63 @@ export class Project  extends AbsModel{
                 this.raw_files_.push(file)
             });
         });
+
+        this.ParseCompileFlags(compile_flags);
+    }
+
+    private ParseCompileFlags(flags: string[]) {
+        for(var i = 0; i < flags.length; i++) {
+            var flag = flags[i];
+            if (flag.startsWith("-I") ||flag.startsWith("/I")) {
+                if (flag === "-I" || flag === "/I") {
+                    i++;
+                    this.include_dirs_.push(flags[i]);
+                } else {
+                    this.include_dirs_.push(flag.substr(2));
+                }
+                continue;
+            }
+
+            if (flag.startsWith("-D") ||flag.startsWith("/D")) {
+                if (flag === "-D" || flag === "/D") {
+                    i++;
+                    this.defines_.push(flags[i]);
+                } else {
+                    this.defines_.push(flag.substr(2));
+                }
+                continue;
+            }
+
+            if (flag === "-isystem") {
+                i++;
+                this.include_dirs_.push(flags[i]);
+                continue;
+            }
+
+            if (flag.startsWith("-std=c++")) {
+                this.cpp_standard = flag.substr(8);
+                continue;
+            }
+
+            if (flag.startsWith("-std=gnu++")) {
+                this.cpp_standard = flag.substr(10);
+                continue;
+            }
+
+            if (flag.startsWith("-std=c")) {
+                this.c_standard = flag.substr(6);
+                continue;
+            }
+
+            if (flag.startsWith("-std=gnu")) {
+                this.c_standard = flag.substr(8);
+                continue;
+            }
+        }
     }
 
     GetType() {
-        return this.project_type_
+        return this.project_type_;
     }
 
     GetLaunchConfig() : LaunchConfiguration | undefined{
@@ -165,6 +224,8 @@ export class Project  extends AbsModel{
         config.name = this.GetFullName();
         config.includePath = this.GetIncludePathes();
         config.defines = this.GetDefiles();
+        config.cStandard = "c" + this.c_standard;
+        config.cppStandard = "c++" + this.cpp_standard;
         property.configurations.push(config);
         return property;
     }

@@ -6,7 +6,7 @@ import * as fs from "fs";
 
 
 export function GetFileGroupNameFromFile(file: string) : string {
-    var ext = path.extname(file)
+    var ext = path.extname(file);
     switch (ext) {
         case ".c":
         case ".cc":
@@ -33,12 +33,12 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
 
     constructor(files: string[]) {
         // write launch.json and tasks.json
-        var all_launchs : model.LaunchConfig = new model.LaunchConfig()
-        var all_builds : model.BuildConfig = new model.BuildConfig()
+        var all_launchs : model.LaunchConfig = new model.LaunchConfig();
+        var all_builds : model.BuildConfig = new model.BuildConfig();
 
         for(var i = 0; i < files.length; i++) {
-            var name = path.basename(files[i])
-            var projects = this.GetProjects(files[i])
+            var name = path.basename(files[i]);
+            var projects = this.GetProjects(files[i]);
             projects.forEach((value, index, self) => {
                 all_builds.tasks.push(value.GetBuildTask());
                 all_builds.tasks.push(value.GetCleanTask());
@@ -52,22 +52,22 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
             var sln_name = name;
             var ext = path.extname(sln_name);
             if (ext !== "") {
-                sln_name = sln_name.replace(ext, "")
+                sln_name = sln_name.replace(ext, "");
             }
 
             this.top_level_item_.push(item.CreateTopLevel(sln_name, projects));
         }
 
-        var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./"
-        var json_root = path.join(json_root, ".vscode")
+        var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./";
+        json_root = path.join(json_root, ".vscode");
         if (!fs.existsSync(json_root)) {
-            fs.mkdirSync(json_root)
+            fs.mkdirSync(json_root);
         }
-        var tasks = path.join(json_root, "tasks.json")
+        var tasks = path.join(json_root, "tasks.json");
         if (fs.existsSync(tasks)) {
-            fs.unlinkSync(tasks)
+            fs.unlinkSync(tasks);
         }
-        var launch = path.join(json_root, "launch.json")
+        var launch = path.join(json_root, "launch.json");
         if (fs.existsSync(launch)) {
             fs.unlinkSync(launch);
         }
