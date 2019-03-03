@@ -9,10 +9,10 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     constructor(f: string[]) {
         super(f);
     }
-    protected GetProjects(file: string): model.Project[] {
+    protected GetProjects(file: string):[model.Project[], string[]] {
         var projects : model.Project[] = [];
         if (!fs.existsSync(file)) {
-            return projects;
+            return [[], []];
         }
 
         var gn_obj : any = JSON.parse(fs.readFileSync(file).toString());
@@ -47,7 +47,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
             );
             projects.push(project);
         }
-        return projects;
+        return [projects, []];
     }
 
     private GetSources(gn_target_obj: any): Map<string, string[]> {
@@ -88,10 +88,13 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     }
 
     private GetDefiles(gn_target_obj: any) {
+        var ret = new Map<string, string[]>();
         if (gn_target_obj.hasOwnProperty("defines")) {
-            return gn_target_obj.defines;
+            ret.set("", gn_target_obj.defines);
+        } else {
+            ret.set("", []);
         }
-        return [];
+        return ret;
     }
 
     private GetCompileFlags(gn_target_obj: any) {
@@ -114,11 +117,14 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         flags = flags.filter(function(elem, index, self) {
             return index === self.indexOf(elem);
         });
-        return flags;
+
+        var ret = new Map<string, string[]>();
+        ret.set("", flags);
+        return ret;
     }
 
     private GetIncludePath(gn_args: any, gn_target_obj: any) {
-        var includes : string[] = []
+        var includes : string[] = [];
         // get system includes if possible
         if (process.platform === "win32") {
             if (gn_target_obj.hasOwnProperty("build_dir") && gn_args.hasOwnProperty("target_cpu")) {
@@ -139,7 +145,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
             includes = includes.concat(gn_target_obj.include_dirs);
         }
 
-        return includes;
+        var ret = new Map<string, string[]>();
+        ret.set("", includes);
+        return ret;
     }
 
     private GetWorkDir(gn_target_obj: any) {
@@ -165,7 +173,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         }
         var work_dir = this.GetWorkDir(gn_target_obj);
         var target = this.GetBinaryName(gn_target_obj);
-        return ninja + " -C " + work_dir + " " + target;
+        var ret = new Map<string, string>();
+        ret.set("", ninja + " -C " + work_dir + " " + target);
+        return ret;
     }
 
     private GetCleanCommand(gn_target_obj: any) {
@@ -175,7 +185,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         }
         var work_dir = this.GetWorkDir(gn_target_obj);
         var target = this.GetBinaryName(gn_target_obj);
-        return ninja + " -C " + work_dir + " -t clean " + target;
+        var ret = new Map<string, string>();
+        ret.set("", ninja + " -C " + work_dir + " -t clean " + target);
+        return ret;
     }
 
 

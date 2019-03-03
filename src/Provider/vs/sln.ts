@@ -3,13 +3,38 @@ import * as path from "path";
 import * as vscode from "vscode";
 import * as vcproj from "./vcxproj";
 
+class ProjectConfigMap {
+    public UUID : string;
+    public SolutionConfigName : string;
+    public ProjectConfigName : string;
+    constructor(uuid : string, solution : string, project : string) {
+        this.UUID = uuid;
+        this.SolutionConfigName = solution;
+        this.ProjectConfigName = project;
+    }
+}
+
+
 export class Sln {
     private file_ : string;
     private uuid_ : string = "";
     private projects_: vcproj.Project[] = [];
+    private solution_configs : string[] = [];
+    private project_configs: ProjectConfigMap[] = [];
 
     constructor(file: string) {
         this.file_ = file;
+    }
+
+    GetProjectConfigName(uuid: string, solution_config_name: string) {
+        var ret : string = "";
+
+        this.project_configs.forEach((v, index, self) => {
+            if (v.UUID === uuid && v.SolutionConfigName === solution_config_name) {
+                ret = v.ProjectConfigName;
+            }
+        });
+        return ret;
     }
 
     Parse() : void {
@@ -31,7 +56,40 @@ export class Sln {
                     project.Parse();
                     this.projects_.push(project);
                 }
-
+            } else if (l.startsWith("GlobalSection(SolutionConfigurationPlatforms)")) {
+                var type = l.split("=")[1].trim();
+                var i = 0;
+                var ll = "";
+                if (type === "preSolution") {
+                    for (i = index + 1; ; i++) {
+                        ll = lines[i].trim();
+                        if (ll.startsWith("EndGlobalSection")) {
+                            break;
+                        }
+                        var config_name = ll.split("=")[1].trim();
+                        this.solution_configs.push(config_name);
+                    }
+                }
+            } else if (l.startsWith("GlobalSection(ProjectConfigurationPlatforms)")) {
+                var type = l.split("=")[1].trim();
+                var i = 0;
+                var ll = "";
+                if (type === "postSolution") {
+                    for (i = index + 1; ; i++) {
+                        ll = lines[i].trim();
+                        if (ll.startsWith("EndGlobalSection")) {
+                            break;
+                        }
+                        var project_config = ll.split("=")[1].trim();
+                        var project_property = ll.split("=")[0].trim();
+                        var project_properties = project_property.split(".");
+                        if (project_properties[2] === "ActiveCfg") {
+                            var project_uuid = project_properties[0];
+                            var solution_config = project_properties[1];
+                            this.project_configs.push(new ProjectConfigMap(project_uuid, solution_config, project_config));
+                        }
+                    }
+                }
             }
         });
     }
@@ -49,7 +107,7 @@ export class Sln {
     }
 
     GetConfigurations() : string[] {
-        throw new Error("Not implement");
+        return this.solution_configs;
     }
 
     AddConfigurations(copy_from: string | undefined) : void {
@@ -72,7 +130,7 @@ export class Sln {
 export function ReadSolution(file: string) : Sln {
     var sln = new Sln(file);
     sln.Parse();
-    return sln
+    return sln;
 }
 
 export function CreateSolution(file: string) : Sln {

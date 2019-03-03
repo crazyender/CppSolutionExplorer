@@ -1,5 +1,6 @@
 import * as path from "path";
 import { Task } from "vscode";
+import * as global from "../utils/globals";
 
 class PlatformSpecificConfiguration {
     public MIMode: string = "";
@@ -21,7 +22,7 @@ class LaunchConfiguration {
 
 export class LaunchConfig {
     public version: string = "0.2.0";
-    public configurations: LaunchConfiguration[] = []
+    public configurations: LaunchConfiguration[] = [];
 
 }
 
@@ -35,7 +36,7 @@ class PropertyConfiguration {
 }
 
 export class PropertyConfig {
-    public configurations: PropertyConfiguration[] = []
+    public configurations: PropertyConfiguration[] = [];
     public version = 4;
 }
 
@@ -56,31 +57,31 @@ export class BuildConfig {
 }
 
 export abstract class AbsModel {
-    private name_: string
-    private full_name_: string
+    private name_: string;
+    private full_name_: string;
     constructor(name:string, full_name:string) {
-        this.name_ = name
-        this.full_name_ = full_name
+        this.name_ = name;
+        this.full_name_ = full_name;
     }
 
     GetName() {
-        return this.name_
+        return this.name_;
     }
 
     GetFullName() {
-        return this.full_name_
+        return this.full_name_;
     }
 }
 
 export class Null extends AbsModel {
     constructor() {
-        super("", "")
+        super("", "");
     }
 }
 
 export class File extends AbsModel{
     constructor(full_path: string) {
-        super(path.basename(full_path), full_path)
+        super(path.basename(full_path), full_path);
     }
 
 }
@@ -88,44 +89,44 @@ export class File extends AbsModel{
 export class FileGroup  extends AbsModel{
     private files_: string[];
     constructor(name: string, files: string[]) {
-        super(name, "")
+        super(name, "");
         this.files_ = files.sort();
     }
 
 
     GetFiles() {
-        var ret : File[] = []
+        var ret : File[] = [];
         for (var i = 0; i < this.files_.length; i++) {
-            ret.push(new File(this.files_[i]))
+            ret.push(new File(this.files_[i]));
         }
-        return ret
+        return ret;
     }
 
 }
 
 export class Project  extends AbsModel{
-    private project_type_: string
-    private files_: Map<string, string[]>
-    private raw_files_ : string[] = []
-    private defines_: string[];
-    private include_dirs_: string[];
-    private build_command_: string;
-    private clean_command_: string;
+    private project_type_: string;
+    private files_: Map<string, string[]>;
+    private raw_files_ : string[] = [];
+    private defines_: Map<string, string[]>;
+    private include_dirs_: Map<string, string[]>;
+    private build_command_: Map<string, string>;
+    private clean_command_: Map<string, string>;
     private root_dir_: string;
     private binary_: string;
-    private cpp_standard: string = "11";
-    private c_standard: string = "99";
+    private cpp_standard: Map<string, string> = new Map<string, string>();
+    private c_standard: Map<string, string> = new Map<string, string>();
     constructor(name: string,
                 full_name: string,
                 project_type: string,
                 files : Map<string, string[]>,
-                defines: string[],
-                include_dirs: string[],
-                compile_flags: string[],
+                defines: Map<string, string[]>,
+                include_dirs: Map<string, string[]>,
+                compile_flags: Map<string, string[]>,
                 root_dir: string,
                 binary: string,
-                build_command: string,
-                clean_command: string) {
+                build_command: Map<string, string>,
+                clean_command: Map<string, string>) {
         super(name, full_name);
         this.files_ = files;
         this.defines_ = defines;
@@ -137,62 +138,79 @@ export class Project  extends AbsModel{
         this.binary_ = binary;
         this.files_.forEach((value, key, self) => {
             value.forEach((file, index, self)=> {
-                this.raw_files_.push(file)
+                this.raw_files_.push(file);
             });
         });
-
+        this.defines_.forEach((def, config, self) => {
+            this.cpp_standard.set(config, "11");
+            this.c_standard.set(config, "99");
+        });
         this.ParseCompileFlags(compile_flags);
     }
 
-    private ParseCompileFlags(flags: string[]) {
-        for(var i = 0; i < flags.length; i++) {
-            var flag = flags[i];
-            if (flag.startsWith("-I") ||flag.startsWith("/I")) {
-                if (flag === "-I" || flag === "/I") {
-                    i++;
-                    this.include_dirs_.push(flags[i]);
-                } else {
-                    this.include_dirs_.push(flag.substr(2));
+    private ParseCompileFlags(flags_group: Map<string, string[]>) {
+        flags_group.forEach((flags, config, self) => {
+            for(var i = 0; i < flags.length; i++) {
+                var flag = flags[i];
+                var includes = this.include_dirs_.get(config);
+                if (flag.startsWith("-I") ||flag.startsWith("/I")) {
+                    if (flag === "-I" || flag === "/I") {
+                        i++;
+                        if (includes) {
+                            includes.push(flags[i]);
+                        }
+                    } else {
+                        if (includes) {
+                            includes.push(flag.substr(2));
+                        }
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            if (flag.startsWith("-D") ||flag.startsWith("/D")) {
-                if (flag === "-D" || flag === "/D") {
-                    i++;
-                    this.defines_.push(flags[i]);
-                } else {
-                    this.defines_.push(flag.substr(2));
+                if (flag.startsWith("-D") ||flag.startsWith("/D")) {
+                    var defines = this.defines_.get(config);
+                    if (flag === "-D" || flag === "/D") {
+                        i++;
+                        if (defines) {
+                            defines.push(flags[i]);
+                        }
+                    } else {
+                        if (defines) {
+                            defines.push(flag.substr(2));
+                        }
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            if (flag === "-isystem") {
-                i++;
-                this.include_dirs_.push(flags[i]);
-                continue;
-            }
+                if (flag === "-isystem") {
+                    i++;
+                    if (includes) {
+                        includes.push(flags[i]);
+                    }
+                    continue;
+                }
 
-            if (flag.startsWith("-std=c++")) {
-                this.cpp_standard = flag.substr(8);
-                continue;
-            }
+                if (flag.startsWith("-std=c++")) {
+                    this.cpp_standard.set(config, flag.substr(8));
+                    continue;
+                }
 
-            if (flag.startsWith("-std=gnu++")) {
-                this.cpp_standard = flag.substr(10);
-                continue;
-            }
+                if (flag.startsWith("-std=gnu++")) {
+                    this.cpp_standard.set(config, flag.substr(10));
+                    continue;
+                }
 
-            if (flag.startsWith("-std=c")) {
-                this.c_standard = flag.substr(6);
-                continue;
-            }
+                if (flag.startsWith("-std=c")) {
+                    this.c_standard.set(config, flag.substr(6));
+                    continue;
+                }
 
-            if (flag.startsWith("-std=gnu")) {
-                this.c_standard = flag.substr(8);
-                continue;
+                if (flag.startsWith("-std=gnu")) {
+                    this.c_standard.set(config, flag.substr(8));
+                    continue;
+                }
             }
-        }
+        });
     }
 
     GetType() {
@@ -223,9 +241,9 @@ export class Project  extends AbsModel{
         var config = new PropertyConfiguration();
         config.name = this.GetFullName();
         config.includePath = this.GetIncludePathes();
-        config.defines = this.GetDefiles();
-        config.cStandard = "c" + this.c_standard;
-        config.cppStandard = "c++" + this.cpp_standard;
+        config.defines = this.GetDefines();
+        config.cStandard = "c" + this.c_standard.get(global.GlobalVarients.selected_config);
+        config.cppStandard = "c++" + this.cpp_standard.get(global.GlobalVarients.selected_config);
         property.configurations.push(config);
         return property;
     }
@@ -233,7 +251,8 @@ export class Project  extends AbsModel{
     GetBuildTask() : BuildTask {
         var task =  new BuildTask();
         task.label = "Build " + this.GetFullName();
-        task.command = this.build_command_;
+        var command = this.build_command_.get(global.GlobalVarients.selected_config);
+        task.command = command ? command : "";
         task.group.isDefault = false;
         task.group.kind = "build";
         return task;
@@ -242,29 +261,32 @@ export class Project  extends AbsModel{
     GetCleanTask() : BuildTask {
         var task =  new BuildTask();
         task.label = "Clean " + this.GetFullName();
-        task.command = this.clean_command_;
+        var command = this.clean_command_.get(global.GlobalVarients.selected_config);
+        task.command = command ? command : "";
         task.group.isDefault = false;
         task.group.kind = "build";
         return task;
     }
 
     GetGroups() {
-        var ret : FileGroup[] = []
-        var file_groups = Array.from(this.files_.keys()).sort()
+        var ret : FileGroup[] = [];
+        var file_groups = Array.from(this.files_.keys()).sort();
         for (var i = 0; i < file_groups.length; i++) {
-            var group_name = file_groups[i]
-            var full_pathes = this.files_.get(group_name)
+            var group_name = file_groups[i];
+            var full_pathes = this.files_.get(group_name);
             ret.push(new FileGroup(group_name, full_pathes ? full_pathes : []));
         }
-        return ret
+        return ret;
     }
 
-    GetDefiles() {
-        return this.defines_;
+    GetDefines() {
+        var defs = this.defines_.get(global.GlobalVarients.selected_config);
+        return defs ? defs : [];
     }
 
     GetIncludePathes() {
-        return this.include_dirs_;
+        var includes =  this.include_dirs_.get(global.GlobalVarients.selected_config);
+        return includes ? includes : [];
     }
 
     GetFiles() {

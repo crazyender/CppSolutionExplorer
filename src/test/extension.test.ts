@@ -5,7 +5,7 @@
 
 // The module 'assert' provides assertion methods from node
 import * as assert from 'assert';
-import * as vcxproj from "../Provider/vs/vcxproj"
+import * as vcxproj from "../Provider/vs/vcxproj";
 
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
@@ -19,6 +19,6 @@ suite("Extension Tests", function () {
 
     test("vcxproj parser", function() {
         var obj = new vcxproj.Project("1", "./test_files/1.vcxproj", "");
-        console.log(obj)
+        console.log(obj);
     });
 });

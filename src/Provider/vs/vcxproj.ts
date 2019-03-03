@@ -43,8 +43,13 @@ class ProjectConfiguration {
 class CompileSource {
     private file_: string;
 
-    constructor(obj: any) {
-        this.file_ = obj.$.Include;
+    constructor(file_path: string, obj: any) {
+        var file = obj.$.Include;
+        if (file.startsWith("/") || (file.length >= 2 && file[1] == ":")) {
+            this.file_ = file;
+        } else {
+            this.file_ = path.join( path.dirname(file_path), file );
+        }
     }
 
     GetFile() {
@@ -73,10 +78,12 @@ class None extends CompileSource{
 }
 
 class ItemGroup {
-    private project_configs : ProjectConfiguration[]  = []
-    private compile_sources: CompileSource[] = []
+    private project_configs : ProjectConfiguration[]  = [];
+    private compile_sources: CompileSource[] = [];
+    private file_path_ : string;
 
-    constructor(object: any | undefined) {
+    constructor(file: string, object: any | undefined) {
+        this.file_path_ = file;
         if (object) {
             this.Parse(object);
         }
@@ -93,7 +100,7 @@ class ItemGroup {
     public RemoveSource(source: CompileSource) {
         this.compile_sources = this.compile_sources.filter((v, index, self) => {
             return v !== source;
-        })
+        });
     }
 
 
@@ -114,25 +121,25 @@ class ItemGroup {
     
                 if (obj.hasOwnProperty("ClCompile")) {
                     for (var i = 0; i < obj.ClCompile.length; i++) {
-                        this.compile_sources.push(new ClCompile(obj.ClCompile[i]));
+                        this.compile_sources.push(new ClCompile(this.file_path_, obj.ClCompile[i]));
                     }
                 }
     
                 if (obj.hasOwnProperty("CustomBuild")) {
                     for (var i = 0; i < obj.CustomBuild.length; i++) {
-                        this.compile_sources.push(new CustomBuild(obj.CustomBuild[i]));
+                        this.compile_sources.push(new CustomBuild(this.file_path_, obj.CustomBuild[i]));
                     }
                 }
     
                 if (obj.hasOwnProperty("ClInclude")) {
                     for (var i = 0; i < obj.ClInclude.length; i++) {
-                        this.compile_sources.push(new ClInclude(obj.ClInclude[i]));
+                        this.compile_sources.push(new ClInclude(this.file_path_, obj.ClInclude[i]));
                     }
                 }
     
                 if (obj.hasOwnProperty("None")) {
                     for (var i = 0; i < obj.None.length; i++) {
-                        this.compile_sources.push(new None(obj.None[i]));
+                        this.compile_sources.push(new None(this.file_path_, obj.None[i]));
                     }
                 }
             }
@@ -292,7 +299,7 @@ export class Project {
                 return;
             }
 
-            this.item_group = new ItemGroup(result.Project);
+            this.item_group = new ItemGroup(this.path_, result.Project);
 
             result.Project.ItemDefinitionGroup.forEach((idg: any, index: any, self: any) => {
                 var g = new ItemDefinitionGroup(this.path_, idg);

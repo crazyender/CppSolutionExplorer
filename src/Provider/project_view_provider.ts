@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as item from "../View/item";
 import * as model from "../Model/project";
+import * as global from "../utils/globals";
 import * as fs from "fs";
 
 
@@ -38,7 +39,7 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
 
         for(var i = 0; i < files.length; i++) {
             var name = path.basename(files[i]);
-            var projects = this.GetProjects(files[i]);
+            var [projects, configs] = this.GetProjects(files[i]);
             projects.forEach((value, index, self) => {
                 all_builds.tasks.push(value.GetBuildTask());
                 all_builds.tasks.push(value.GetCleanTask());
@@ -55,7 +56,12 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
                 sln_name = sln_name.replace(ext, "");
             }
 
-            this.top_level_item_.push(item.CreateTopLevel(sln_name, projects));
+            this.top_level_item_.push(item.CreateTopLevel(sln_name, projects, configs));
+            if (configs.length !== 0 && global.GlobalVarients.selected_config === "") {
+                global.GlobalVarients.selected_config = configs[0];
+            } else {
+                global.GlobalVarients.selected_config = "";
+            }
         }
 
         var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./";
@@ -79,7 +85,7 @@ export abstract class TreeViewProviderProjects implements vscode.TreeDataProvide
 
     }
 
-    protected abstract  GetProjects(root_file: string) : model.Project[];
+    protected abstract  GetProjects(root_file: string) : [model.Project[], string[]];
 
     getTreeItem(element: item.ProjectViewItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;

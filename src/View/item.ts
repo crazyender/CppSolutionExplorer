@@ -5,6 +5,8 @@ import * as event from "../Provider/view_provider_events";
 
 export enum ItemType {
     TOP_LEVEL,
+    CONFIG_GROUP,
+    CONFIG,
     PROJECT,
     FILE_GROUP,
     FILE
@@ -15,7 +17,7 @@ export abstract class ProjectViewItem extends vscode.TreeItem {
     private item_type_ : ItemType;
     private name_ : string;
     constructor(name: string = "", t: ItemType = ItemType.FILE, parent: ProjectViewItem | undefined) {
-        super(name, t === ItemType.FILE ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
+        super(name, (t === ItemType.FILE || t === ItemType.CONFIG) ? vscode.TreeItemCollapsibleState.None : vscode.TreeItemCollapsibleState.Collapsed);
         this.name_ = name;
         this.item_type_ = t;
     }
@@ -169,14 +171,80 @@ class ProjectLevelView extends ProjectViewItem {
     }
 }
 
+class ConfigLevelView extends ProjectViewItem {
+    private parent_ : ProjectViewItem;
+    private model_: model.Null;
+    constructor (name: string, config: string, parent: ProjectViewItem) {
+        super("Configuration", ItemType.CONFIG, parent);
+        this.parent_ = parent;
+        this.contextValue = "config";
+        this.model_ = new model.Null();
+        this.iconPath = path.join(__filename, "..", "..", "..", "icons", "file.svg");
+        this.id = name + ":configs:" + config;
+        this.tooltip = config;
+        this.label = config;
+        this.command = {
+            command: 'CppSolutionExplorer.SelectConfig',
+            arguments: [this],
+            title: 'Select Configuration'
+        };
+    }
+
+    GetChildren() : ProjectViewItem[] {
+        return [];
+    }
+
+    GetParent() : ProjectViewItem | undefined{
+        return this.parent_;
+    }
+
+    GetModel() {
+        return this.model_;
+    }
+}
+
+class ConfigGroupLevelView extends ProjectViewItem {
+    private parent_ : ProjectViewItem;
+    private configs_ : string[];
+    private children_: ProjectViewItem[] = [];
+    private model_: model.Null;
+    constructor (name: string, configs: string[], parent: ProjectViewItem) {
+    super("Configurations", ItemType.CONFIG_GROUP, parent);
+        this.configs_ = configs;
+        this.parent_ = parent;
+        this.contextValue = "configs";
+        configs.forEach((c, i, self) => {
+            this.children_.push(new ConfigLevelView(name, c, this));
+        });
+        this.model_ = new model.Null();
+        this.iconPath = path.join(__filename, "..", "..", "..", "icons", "packages.svg");
+        this.id = name + ":configs";
+        this.tooltip = "Configurations";
+        this.label = "Configurations";
+    }
+
+    GetChildren() : ProjectViewItem[] {
+        return this.children_;
+    }
+
+    GetParent() : ProjectViewItem | undefined{
+        return this.parent_;
+    }
+
+    GetModel() {
+        return this.model_;
+    }
+}
+
 class TopLevelView extends ProjectViewItem {
     private children_: ProjectViewItem[];
     private empty_model_: model.Null;
 
-    constructor(name: string, projects: model.Project[]) {
+    constructor(name: string, projects: model.Project[], configs: string[]) {
         super(name, ItemType.TOP_LEVEL, undefined);
         this.empty_model_ = new model.Null();
         this.children_ = [];
+        this.children_.push(new ConfigGroupLevelView(name, configs, this));
         for(var i = 0; i < projects.length; i++) {
             this.children_.push(new ProjectLevelView(projects[i], this));
         }
@@ -198,6 +266,6 @@ class TopLevelView extends ProjectViewItem {
     }
 }
 
-export function CreateTopLevel(name: string, children: model.Project[]) : ProjectViewItem {
-    return new TopLevelView(name, children);
+export function CreateTopLevel(name: string, children: model.Project[], configs: string[]) : ProjectViewItem {
+    return new TopLevelView(name, children, configs);
 }

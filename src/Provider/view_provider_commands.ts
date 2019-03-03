@@ -6,6 +6,7 @@ import * as view from "../View/item";
 import * as model from "../model/project";
 import * as event from "./view_provider_events";
 import * as worker from "../utils/worker";
+import * as global from "../utils/globals";
 
 
 function GetBuildTerminal(): vscode.Terminal {
@@ -240,40 +241,58 @@ class FindInSolutionCommand extends AbsCommand{
     }
 }
 
-class ChangeConfigCommand extends AbsCommand{
-    static in_use_project_ : string = "";
+async function DoChangeConfigCommand(item: view.ProjectViewItem) : Promise<void> {
+    if (!vscode.window.activeTextEditor) { return; }
+    var file_path = vscode.window.activeTextEditor.document.fileName;
+    var v = event.GetFileFromCache(file_path);
+    if (!v) { return; }
+    if (v.GetItemType() !== view.ItemType.FILE) { return; }
+    var group = v.GetParent();
+    if (!group) { return; }
+    var project = group.GetParent();
+    if (!project) { return; }
 
+    var project_model = project.GetModel() as model.Project;
+    if (global.GlobalVarients.in_use_project_ === (project_model.GetFullName() + ":" + global.GlobalVarients.in_use_project_)) { return; }
+    global.GlobalVarients.in_use_project_ = project_model.GetFullName() + ":" + global.GlobalVarients.in_use_project_;
+    var c_cpp = project_model.GetPropertyConfig();
+    var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./";
+    json_root = path.join(json_root, ".vscode");
+    if (!fs.existsSync(json_root)) {
+        fs.mkdirSync(json_root);
+    }
+    var c_pp_property = path.join(json_root, "c_cpp_properties.json");
+    if (fs.existsSync(c_pp_property)) {
+        fs.unlinkSync(c_pp_property);
+    }
+    fs.writeFile(c_pp_property, JSON.stringify(c_cpp, undefined, "  "), (err) => {
+        
+    });
+}
+
+class ChangeConfigCommand extends AbsCommand{
+    
     constructor(provider: absprovider.TreeViewProviderProjects) {
         super(provider);
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-        if (!vscode.window.activeTextEditor) { return; }
-        var file_path = vscode.window.activeTextEditor.document.fileName;
-        var v = event.GetFileFromCache(file_path);
-        if (!v) { return; }
-        if (v.GetItemType() !== view.ItemType.FILE) { return; }
-        var group = v.GetParent();
-        if (!group) { return; }
-        var project = group.GetParent();
-        if (!project) { return; }
+        return DoChangeConfigCommand(item);
+    }
+}
 
-        var project_model = project.GetModel() as model.Project;
-        if (ChangeConfigCommand.in_use_project_ === project_model.GetFullName()) { return; }
-        ChangeConfigCommand.in_use_project_ = project_model.GetFullName();
-        var c_cpp = project_model.GetPropertyConfig();
-        var json_root = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./";
-        json_root = path.join(json_root, ".vscode");
-        if (!fs.existsSync(json_root)) {
-            fs.mkdirSync(json_root);
+export class SelectConfigCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        if (item.GetItemType() !== view.ItemType.CONFIG) {
+            return;
         }
-        var c_pp_property = path.join(json_root, "c_cpp_properties.json");
-        if (fs.existsSync(c_pp_property)) {
-            fs.unlinkSync(c_pp_property);
-        }
-        fs.writeFile(c_pp_property, JSON.stringify(c_cpp, undefined, "  "), (err) => {
-            
-        });
+
+        global.GlobalVarients.selected_config = item.label ? item.label : "";
+        DoChangeConfigCommand(item);
     }
 }
 
@@ -288,6 +307,7 @@ export class TreeViewProviderProjectsCommands {
         this.commands_.set("ChangeConfig", new ChangeConfigCommand(provider));
         this.commands_.set("FindFile", new FindFileCommand(provider));
         this.commands_.set("FindInSolution", new FindInSolutionCommand(provider));
+        this.commands_.set("SelectConfig", new SelectConfigCommand(provider));
 
     }
 

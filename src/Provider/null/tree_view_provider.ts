@@ -4,8 +4,8 @@ import * as model from "../../Model/project";
 
 export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
-    protected GetProjects(file: string): model.Project[] {
-        return [];
+    protected GetProjects(file: string): [model.Project[], string[]] {
+        return [[], []];
     }
 
 }
