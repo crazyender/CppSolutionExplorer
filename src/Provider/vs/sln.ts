@@ -138,5 +138,16 @@ export function CreateSolution(file: string) : Sln {
 }
 
 export function GetMsbuild() : string {
-    throw new Error("Not implement");
+    if (process.platform === "win32") {
+        var msbuild = "";
+        ["c", "d", "e", "f", "g", "h", "i"].forEach((letter, index, self) => {
+            var p = letter + ":/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MSBuild.exe";
+            if (fs.existsSync(p) && msbuild === "") {
+                msbuild = "& \"" + p + "\"";
+            }
+        });
+        return msbuild;
+    } else {
+        return "dotnet msbuild";
+    }
 }

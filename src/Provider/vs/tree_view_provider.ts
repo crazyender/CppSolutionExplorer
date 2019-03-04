@@ -56,19 +56,27 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
                 defines.set(config, proj.GetDefines(proj_config));
                 includes.set(config, proj.GetIncludeDirs(proj_config));
                 flags.set(config, proj.GetCompileFlags(proj_config));
-                build_commands.set(config, "");
-                clean_commands.set(config, "");
+                var build_command = sln.GetMsbuild() + " " + path.basename(file) + 
+                                    " -t:" + proj.GetName() + 
+                                    " -property:Configuration=" + config.split("|")[0] +
+                                    " -property:Platform=" + config.split("|")[1];
+                build_commands.set(config, build_command);
+                var clean_command = sln.GetMsbuild() + " " + path.basename(file) + 
+                                    " -t:Clean" + 
+                                    " -property:Configuration=" + config.split("|")[0] +
+                                    " -property:Platform=" + config.split("|")[1];
+                clean_commands.set(config, clean_command);
             }
     
             var p = new model.Project(
                 proj.GetName(),
                 path.basename(file) + ":" + proj.GetPath(),
-                "static_library",
+                "executable",
                 proj_files,
                 defines,
                 includes,
                 flags,
-                "",
+                "./",
                 "",
                 build_commands,
                 clean_commands
