@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
 import * as model from '../../Model/project';
 import * as absprovider from '../project_view_provider';
+import * as globals from "../../utils/globals";
 
 export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
   private gn_file_content = undefined;
@@ -35,14 +35,15 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
       }
 
       var project = new model.Project(
-          name, path.basename(file) + ':' + gn_target_name,
+          name, gn_target_name, path.basename(file) + ':' + gn_target_name,
           this.GetType(gn_target_obj), this.GetSources(gn_target_obj),
           this.GetDefiles(gn_target_obj),
           this.GetIncludePath(gn_args, gn_target_obj),
           this.GetCompileFlags(gn_target_obj), this.GetWorkDir(gn_target_obj),
           this.GetBinaryName(gn_target_obj),
           this.GetBuildCommand(gn_target_obj),
-          this.GetCleanCommand(gn_target_obj));
+          this.GetCleanCommand(gn_target_obj),
+          false);
       projects.push(project);
     }
     return [projects, []];
@@ -71,7 +72,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
     for (var i = 0; i < sources.length; i++) {
       var source = sources[i];
-      var group_name = absprovider.GetFileGroupNameFromFile(source);
+      var group_name = globals.GetFileGroupNameFromFile(source);
       var v = ret.get(group_name);
       if (v) {
         v.push(source);

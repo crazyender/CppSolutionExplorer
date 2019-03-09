@@ -281,17 +281,13 @@ export class Project {
   // condition => ItemDefinitionGroup
   private item_definition_group: Map<string, ItemDefinitionGroup> =
       new Map<string, ItemDefinitionGroup>();
-
   private project_property: Map<string, ProjectProperty> =
       new Map<string, ProjectProperty>();
-
   private project_config_property: Map<string, ProjectConfigProperty> =
       new Map<string, ProjectConfigProperty>();
-
   private platform_mapper: Map<string, string> = new Map<string, string>();
-
   private string_mapper: Map<string, string> = new Map<string, string>();
-
+  private compatiable_mode: boolean = false;
 
   constructor(name: string, path: string, uuid: string) {
     this.name_ = name;
@@ -362,7 +358,24 @@ export class Project {
               }
             });
       }
+
+      if (result.Project.hasOwnProperty("ImportGroup")) {
+        result.Project.ImportGroup.forEach((elem: any, index: Number, self: any) => {
+          if (elem.hasOwnProperty("$") && elem.$.hasOwnProperty("Label") && elem.$.Label === "ExtensionTargets") {
+            if (process.platform === "win32") {
+              // only msbuild from VisualStudio can handle ExtensionTargets property
+              this.compatiable_mode = true;
+            } else {
+              this.compatiable_mode = false;
+            }
+          }
+        });
+      }
     });
+  }
+
+  IsReadOnly() {
+    return !this.compatiable_mode;
   }
 
   GetFiles(): string[] {

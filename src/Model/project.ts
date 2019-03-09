@@ -1,6 +1,6 @@
 import * as path from 'path';
 import {Task} from 'vscode';
-import * as global from '../utils/globals';
+import * as globals from '../utils/globals';
 
 class PlatformSpecificConfiguration {
   public MIMode: string = '';
@@ -117,18 +117,21 @@ export class Project extends AbsModel {
   private build_command_: Map<string, string>;
   private clean_command_: Map<string, string>;
   private root_dir_: Map<string, string>;
-
+  private readonly_: boolean;
   private binary_: string;
+  private path_: string;
   private cpp_standard: Map<string, string> = new Map<string, string>();
   private c_standard: Map<string, string> = new Map<string, string>();
   constructor(
-      name: string, full_name: string, project_type: Map<string, string>,
+      name: string, file_path: string, full_name: string, project_type: Map<string, string>,
       files: Map<string, string[]>, defines: Map<string, string[]>,
       include_dirs: Map<string, string[]>, compile_flags: Map<string, string[]>,
       root_dir: Map<string, string>, binary: string,
-      build_command: Map<string, string>, clean_command: Map<string, string>) {
+      build_command: Map<string, string>, clean_command: Map<string, string>,
+      readonly: boolean) {
     super(name, full_name);
     this.files_ = files;
+    this.path_ = file_path;
     this.defines_ = defines;
     this.include_dirs_ = include_dirs;
     this.build_command_ = build_command;
@@ -136,6 +139,7 @@ export class Project extends AbsModel {
     this.project_type_ = project_type;
     this.root_dir_ = root_dir;
     this.binary_ = binary;
+    this.readonly_ = readonly;
     this.files_.forEach((value, key, self) => {
       value.forEach((file, index, self) => {
         this.raw_files_.push(file);
@@ -218,7 +222,7 @@ export class Project extends AbsModel {
   }
 
   GetLaunchConfig(): LaunchConfiguration|undefined {
-    var type = this.project_type_.get(global.GlobalVarients.selected_config);
+    var type = this.project_type_.get(globals.GlobalVarients.selected_config);
     type = type ? type : 'static_library';
 
     if (type !== 'executable') {
@@ -232,13 +236,17 @@ export class Project extends AbsModel {
       config.type = 'cppdbg';
     }
     config.program = this.binary_;
-    var cwd = this.root_dir_.get(global.GlobalVarients.selected_config);
-    console.log('selected_config: ' + global.GlobalVarients.selected_config);
+    var cwd = this.root_dir_.get(globals.GlobalVarients.selected_config);
+    console.log('selected_config: ' + globals.GlobalVarients.selected_config);
     config.cwd = cwd ? cwd : 'xx';
     config.preLaunchTask = 'Build ' + this.GetFullName();
     config.linux.MIMode = 'gdb';
     config.osx.MIMode = 'lldb';
     return config;
+  }
+
+  IsReadOnly() {
+    return this.readonly_;
   }
 
   GetPropertyConfig(): PropertyConfig {
@@ -248,9 +256,9 @@ export class Project extends AbsModel {
     config.includePath = this.GetIncludePathes();
     config.defines = this.GetDefines();
     config.cStandard =
-        'c' + this.c_standard.get(global.GlobalVarients.selected_config);
+        'c' + this.c_standard.get(globals.GlobalVarients.selected_config);
     config.cppStandard =
-        'c++' + this.cpp_standard.get(global.GlobalVarients.selected_config);
+        'c++' + this.cpp_standard.get(globals.GlobalVarients.selected_config);
     property.configurations.push(config);
     return property;
   }
@@ -259,7 +267,7 @@ export class Project extends AbsModel {
     var task = new BuildTask();
     task.label = 'Build ' + this.GetFullName();
     var command =
-        this.build_command_.get(global.GlobalVarients.selected_config);
+        this.build_command_.get(globals.GlobalVarients.selected_config);
     task.command = command ? command : '';
     task.group.isDefault = false;
     task.group.kind = 'build';
@@ -270,7 +278,7 @@ export class Project extends AbsModel {
     var task = new BuildTask();
     task.label = 'Clean ' + this.GetFullName();
     var command =
-        this.clean_command_.get(global.GlobalVarients.selected_config);
+        this.clean_command_.get(globals.GlobalVarients.selected_config);
     task.command = command ? command : '';
     task.group.isDefault = false;
     task.group.kind = 'build';
@@ -289,17 +297,43 @@ export class Project extends AbsModel {
   }
 
   GetDefines() {
-    var defs = this.defines_.get(global.GlobalVarients.selected_config);
+    var defs = this.defines_.get(globals.GlobalVarients.selected_config);
     return defs ? defs : [];
   }
 
   GetIncludePathes() {
     var includes =
-        this.include_dirs_.get(global.GlobalVarients.selected_config);
+        this.include_dirs_.get(globals.GlobalVarients.selected_config);
     return includes ? includes : [];
   }
 
   GetFiles() {
     return this.raw_files_;
+  }
+
+  AddFile(f: string) {
+    f = path.join(this.path_, f);
+    var group_name = globals.GetFileGroupNameFromFile(f);
+    this.raw_files_.push(f);
+    var files = this.files_.get(group_name);
+    if (files) {
+      files.push(f);
+    } else {
+      this.files_.set(group_name, [f]);
+    }
+  }
+
+  DeleteFile(file: string) {
+    var group_name = globals.GetFileGroupNameFromFile(file);
+    this.raw_files_ = this.raw_files_.filter((f, i, self) => {
+      return f !== file;
+    });
+    var files = this.files_.get(group_name);
+    if (files) {
+      files = files.filter((f, i, self) => {
+        return f !== file;
+      });
+      this.files_.set(group_name, files);
+    }
   }
 }

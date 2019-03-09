@@ -31,7 +31,7 @@ function GetFindResultPanel() : vscode.OutputChannel {
 }
 
 abstract class AbsCommand {
-    private provider_ : absprovider.TreeViewProviderProjects;
+    protected provider_ : absprovider.TreeViewProviderProjects;
     constructor(provider: absprovider.TreeViewProviderProjects) {
         this.provider_ = provider;
     }
@@ -125,7 +125,7 @@ class FindFileCommand extends AbsCommand{
         if (item.GetItemType() === view.ItemType.TOP_LEVEL) {
             // get file name from user
             let options: vscode.InputBoxOptions = {
-                prompt: "Label: ",
+                prompt: "Please input file name: ",
                 placeHolder: ""
             };
             
@@ -178,7 +178,7 @@ class FindInSolutionCommand extends AbsCommand{
         var file_path = vscode.window.activeTextEditor.document.fileName;
         var search_value = vscode.window.activeTextEditor.document.getText(vscode.window.activeTextEditor.selection);
         let options: vscode.InputBoxOptions = {
-            prompt: "Label: ",
+            prompt: "Please input text: ",
             placeHolder: search_value
         };
         await vscode.window.showInputBox(options).then(value => {
@@ -296,6 +296,93 @@ export class SelectConfigCommand extends AbsCommand{
     }
 }
 
+export class AddFileCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        let options: vscode.InputBoxOptions = {
+            prompt: "Input file name: ",
+            placeHolder: ""
+        };
+        var file_name = "";
+        await vscode.window.showInputBox(options).then(value => {
+            if (!value) { return; }
+            file_name = value;
+        });
+
+        if (file_name === "") {
+            return;
+        }
+
+        var proj = item.GetModel() as model.Project;
+        proj.AddFile(file_name);
+        vscode.commands.executeCommand("CppSolutionExplorer.Refresh");
+    }
+}
+
+export class DeleteFileCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        
+    }
+}
+
+export class RenameFileCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        
+    }
+}
+
+export class AddProjectCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        
+    }
+}
+
+export class DeleteProjectCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        
+    }
+}
+
+export class RenameProjectCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        
+    }
+}
+
+export class RefreshCommand extends AbsCommand{
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        this.provider_.Refresh();
+    }
+}
+
+
 export class TreeViewProviderProjectsCommands {
     private commands_ : Map<string, AbsCommand> = new Map<string, AbsCommand>();
 
@@ -308,6 +395,13 @@ export class TreeViewProviderProjectsCommands {
         this.commands_.set("FindFile", new FindFileCommand(provider));
         this.commands_.set("FindInSolution", new FindInSolutionCommand(provider));
         this.commands_.set("SelectConfig", new SelectConfigCommand(provider));
+        this.commands_.set("AddFile", new AddFileCommand(provider));
+        this.commands_.set("DeleteFile", new DeleteFileCommand(provider));
+        this.commands_.set("RenameFile", new RenameFileCommand(provider));
+        this.commands_.set("AddProject", new AddProjectCommand(provider));
+        this.commands_.set("DeleteProject", new DeleteProjectCommand(provider));
+        this.commands_.set("RenameProject", new RenameProjectCommand(provider));
+        this.commands_.set("Refresh", new RefreshCommand(provider));
 
     }
 

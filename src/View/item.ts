@@ -148,9 +148,15 @@ class ProjectLevelView extends ProjectViewItem {
         this.parent_ = parent;
         var groups = project.GetGroups();
         this.tooltip = project.GetFullName();
-        this.label = project.GetName();
+
         this.id = project.GetFullName();
-        this.contextValue = "project";
+        if (project.IsReadOnly()) {
+            this.label = project.GetName() + " (Import from VS)";
+            this.contextValue = "project(read only)";
+        } else {
+            this.label = project.GetName();
+            this.contextValue = "project";
+        }
         this.children_ = [];
         for(var i = 0; i < groups.length; i++) {
             this.children_.push(new FileGroupLevelView(groups[i], this));

@@ -53,6 +53,18 @@
 				"command": "CppSolutionExplorer.FindInSolution",
 				"title": "Search in files",
 				"icon": "icons/search.svg"
+			},
+			{
+				"command": "CppSolutionExplorer.AddFile",
+				"title": "Add File"
+			},
+			{
+				"command": "CppSolutionExplorer.DeleteFile",
+				"title": "Delete File"
+			},
+			{
+				"command": "CppSolutionExplorer.RenameFile",
+				"title": "Rename File"
 			}
 		],
 		"menus": {
@@ -61,6 +73,21 @@
 					"command": "CppSolutionExplorer.FindFile",
 					"when": "view == CppSolutionView && viewItem == toplevel",
 					"group": "inline"
+				},
+				{
+					"command": "CppSolutionExplorer.AddFile",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "0_file"
+				},
+				{
+					"command": "CppSolutionExplorer.DeleteFile",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "1_build"
+				},
+				{
+					"command": "CppSolutionExplorer.RenameFile",
+					"when": "view == CppSolutionView && viewItem == project",
+					"group": "1_build"
 				},
 				{
 					"command": "CppSolutionExplorer.BuildProject",

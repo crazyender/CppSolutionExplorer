@@ -1,10 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-
 import * as model from '../../Model/project';
 import * as absprovider from '../project_view_provider';
-
+import * as globals from "../../utils/globals";
 import * as sln from './sln';
 
 export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
@@ -35,7 +34,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
       for (var i = 0; i < sources.length; i++) {
         var source = sources[i];
-        var group_name = absprovider.GetFileGroupNameFromFile(source);
+        var group_name = globals.GetFileGroupNameFromFile(source);
         var v = proj_files.get(group_name);
         if (v) {
           v.push(source);
@@ -90,9 +89,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
       }
 
       var p = new model.Project(
-          proj.GetName(), path.basename(file) + ':' + proj.GetPath(),
+          proj.GetName(), proj.GetPath(), path.basename(file) + ':' + proj.GetPath(),
           project_types, proj_files, defines, includes, flags, out_pathes, '',
-          build_commands, clean_commands);
+          build_commands, clean_commands, proj.IsReadOnly());
       projects.push(p);
     });
     return [projects, solution.GetConfigurations()];

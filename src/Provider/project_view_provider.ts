@@ -7,70 +7,50 @@ import * as global from '../utils/globals';
 import * as item from '../View/item';
 
 
-export function GetFileGroupNameFromFile(file: string): string {
-  var ext = path.extname(file);
-  switch (ext) {
-    case '.c':
-    case '.cc':
-    case '.cxx':
-    case '.cpp':
-    case '.m':
-    case '.mm':
-      return 'Source Files';
-    case '.h':
-    case '.hh':
-    case '.hpp':
-    case '.hxx':
-      return 'Header Files';
-    case '.java':
-      return 'Java Files';
-    default:
-      return 'Object Files';
-  }
-}
+
 
 export abstract class TreeViewProviderProjects implements
     vscode.TreeDataProvider<item.ProjectViewItem> {
   private top_level_item_: item.ProjectViewItem[] = [];
+  private projects_: {[id:string]: model.Project[]} = {};
+  private configs_: {[id:string]: string[]} = {};
+  private all_launchs: model.LaunchConfig = new model.LaunchConfig();
+  private all_builds: model.BuildConfig = new model.BuildConfig();
+  private solutions: string[] = [];
 
-  constructor(files: string[]) {
-    // write launch.json and tasks.json
-    var all_launchs: model.LaunchConfig = new model.LaunchConfig();
-    var all_builds: model.BuildConfig = new model.BuildConfig();
+  public Refresh() {
+    this.top_level_item_ = [];
+    this.all_builds.tasks = [];
+    this.all_launchs.configurations = [];
 
-    for (var i = 0; i < files.length; i++) {
-      var name = path.basename(files[i]);
-      var [projects, configs] = this.GetProjects(files[i]);
+    for(var i = 0; i < this.solutions.length; i++) {
+      var sln_name = this.solutions[i];
+      var projects = this.projects_[sln_name];
+      var configs = this.configs_[sln_name];
+
       if (configs.length !== 0 &&
-          global.GlobalVarients.selected_config === '') {
+        global.GlobalVarients.selected_config === '') {
         global.GlobalVarients.selected_config = configs[0];
       } else {
         global.GlobalVarients.selected_config = '';
       }
 
       projects.forEach((value, index, self) => {
-        all_builds.tasks.push(value.GetBuildTask());
-        all_builds.tasks.push(value.GetCleanTask());
+        this.all_builds.tasks.push(value.GetBuildTask());
+        this.all_builds.tasks.push(value.GetCleanTask());
 
         var launch = value.GetLaunchConfig();
         if (launch) {
-          all_launchs.configurations.push(launch);
+          this.all_launchs.configurations.push(launch);
         }
       });
 
-      var sln_name = name;
-      var ext = path.extname(sln_name);
-      if (ext !== '') {
-        sln_name = sln_name.replace(ext, '');
-      }
-
       this.top_level_item_.push(
-          item.CreateTopLevel(sln_name, projects, configs));
+        item.CreateTopLevel(sln_name, projects, configs));
     }
 
-
     var json_root =
-        vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
+    vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
     json_root = path.join(json_root, '.vscode');
     if (!fs.existsSync(json_root)) {
       fs.mkdirSync(json_root);
@@ -84,10 +64,30 @@ export abstract class TreeViewProviderProjects implements
       fs.unlinkSync(launch);
     }
 
-    fs.writeFile(tasks, JSON.stringify(all_builds, undefined, '  '), (err) => {
+    fs.writeFile(tasks, JSON.stringify(this.all_builds, undefined, '  '), (err) => {
       fs.writeFile(
-          launch, JSON.stringify(all_launchs, undefined, '  '), (err) => {});
+          launch, JSON.stringify(this.all_launchs, undefined, '  '), (err) => {});
     });
+  }
+
+  constructor(files: string[]) {
+    // write launch.json and tasks.json
+
+    for (var i = 0; i < files.length; i++) {
+      var name = path.basename(files[i]);
+      var sln_name = name;
+      var ext = path.extname(sln_name);
+      if (ext !== '') {
+        sln_name = sln_name.replace(ext, '');
+      }
+      this.solutions.push(sln_name);
+      
+      var [projects, configs] = this.GetProjects(files[i]);
+      this.projects_[sln_name] = projects;
+      this.configs_[sln_name] = configs;
+    }
+
+    this.Refresh();
   }
 
   protected abstract GetProjects(root_file: string):
