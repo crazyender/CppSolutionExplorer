@@ -12,11 +12,12 @@ import * as item from '../View/item';
 export abstract class TreeViewProviderProjects implements
     vscode.TreeDataProvider<item.ProjectViewItem> {
   private top_level_item_: item.ProjectViewItem[] = [];
-  private projects_: {[id:string]: model.Project[]} = {};
-  private configs_: {[id:string]: string[]} = {};
   private all_launchs: model.LaunchConfig = new model.LaunchConfig();
   private all_builds: model.BuildConfig = new model.BuildConfig();
-  private solutions: string[] = [];
+  
+  public solutions: string[] = [];
+  public projects_: {[id:string]: model.Project[]} = {};
+  public configs_: {[id:string]: string[]} = {};
 
   public Refresh() {
     this.top_level_item_ = [];
@@ -44,10 +45,12 @@ export abstract class TreeViewProviderProjects implements
           this.all_launchs.configurations.push(launch);
         }
       });
-
+      
       this.top_level_item_.push(
         item.CreateTopLevel(sln_name, projects, configs));
     }
+
+    this._onDidChangeTreeData.fire();
 
     var json_root =
     vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
@@ -87,11 +90,17 @@ export abstract class TreeViewProviderProjects implements
       this.configs_[sln_name] = configs;
     }
 
+
     this.Refresh();
   }
 
   protected abstract GetProjects(root_file: string):
       [model.Project[], string[]];
+
+  private _onDidChangeTreeData: vscode.EventEmitter<item.ProjectViewItem | undefined> 
+          = new vscode.EventEmitter<item.ProjectViewItem | undefined>();
+  readonly onDidChangeTreeData: vscode.Event<item.ProjectViewItem | undefined> 
+          = this._onDidChangeTreeData.event;
 
   getTreeItem(element: item.ProjectViewItem): vscode.TreeItem
       |Thenable<vscode.TreeItem> {

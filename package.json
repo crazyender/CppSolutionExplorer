@@ -76,32 +76,52 @@
 				},
 				{
 					"command": "CppSolutionExplorer.AddFile",
-					"when": "view == CppSolutionView && viewItem == project",
+					"when": "view == CppSolutionView && viewItem == project_rwb",
+					"group": "0_file"
+				},
+				{
+					"command": "CppSolutionExplorer.AddFile",
+					"when": "view == CppSolutionView && viewItem == project_rwn",
 					"group": "0_file"
 				},
 				{
 					"command": "CppSolutionExplorer.DeleteFile",
-					"when": "view == CppSolutionView && viewItem == project",
-					"group": "1_build"
+					"when": "view == CppSolutionView && viewItem == file_rw",
+					"group": "0_file"
 				},
 				{
 					"command": "CppSolutionExplorer.RenameFile",
-					"when": "view == CppSolutionView && viewItem == project",
+					"when": "view == CppSolutionView && viewItem == file_rw",
+					"group": "0_file"
+				},
+				{
+					"command": "CppSolutionExplorer.BuildProject",
+					"when": "view == CppSolutionView && viewItem == project_rwb",
 					"group": "1_build"
 				},
 				{
 					"command": "CppSolutionExplorer.BuildProject",
-					"when": "view == CppSolutionView && viewItem == project",
+					"when": "view == CppSolutionView && viewItem == project_rnb",
 					"group": "1_build"
 				},
 				{
 					"command": "CppSolutionExplorer.RebuildProject",
-					"when": "view == CppSolutionView && viewItem == project",
+					"when": "view == CppSolutionView && viewItem == project_rwb",
+					"group": "1_build"
+				},
+				{
+					"command": "CppSolutionExplorer.RebuildProject",
+					"when": "view == CppSolutionView && viewItem == project_rnb",
 					"group": "1_build"
 				},
 				{
 					"command": "CppSolutionExplorer.CleanProject",
-					"when": "view == CppSolutionView && viewItem == project",
+					"when": "view == CppSolutionView && viewItem == project_rwb",
+					"group": "2_clean"
+				},
+				{
+					"command": "CppSolutionExplorer.CleanProject",
+					"when": "view == CppSolutionView && viewItem == project_rnb",
 					"group": "2_clean"
 				}
 			]

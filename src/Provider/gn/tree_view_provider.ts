@@ -43,7 +43,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
           this.GetBinaryName(gn_target_obj),
           this.GetBuildCommand(gn_target_obj),
           this.GetCleanCommand(gn_target_obj),
-          false);
+          true, true);
       projects.push(project);
     }
     return [projects, []];

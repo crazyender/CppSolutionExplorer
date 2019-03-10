@@ -91,7 +91,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
       var p = new model.Project(
           proj.GetName(), proj.GetPath(), path.basename(file) + ':' + proj.GetPath(),
           project_types, proj_files, defines, includes, flags, out_pathes, '',
-          build_commands, clean_commands, proj.IsReadOnly());
+          build_commands, clean_commands, proj.IsReadOnly(), proj.IsReadOnly());
       projects.push(p);
     });
     return [projects, solution.GetConfigurations()];

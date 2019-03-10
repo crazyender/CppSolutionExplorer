@@ -287,7 +287,7 @@ export class Project {
       new Map<string, ProjectConfigProperty>();
   private platform_mapper: Map<string, string> = new Map<string, string>();
   private string_mapper: Map<string, string> = new Map<string, string>();
-  private compatiable_mode: boolean = false;
+  private compatiable_mode: boolean = true;
 
   constructor(name: string, path: string, uuid: string) {
     this.name_ = name;
@@ -359,14 +359,14 @@ export class Project {
             });
       }
 
+      this.compatiable_mode = false;
+
       if (result.Project.hasOwnProperty("ImportGroup")) {
         result.Project.ImportGroup.forEach((elem: any, index: Number, self: any) => {
           if (elem.hasOwnProperty("$") && elem.$.hasOwnProperty("Label") && elem.$.Label === "ExtensionTargets") {
             if (process.platform === "win32") {
               // only msbuild from VisualStudio can handle ExtensionTargets property
               this.compatiable_mode = true;
-            } else {
-              this.compatiable_mode = false;
             }
           }
         });

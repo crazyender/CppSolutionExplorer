@@ -48,8 +48,25 @@ class FileLevelView extends ProjectViewItem {
         this.parent_ = parent;
         this.tooltip = file.GetFullName();
         this.label = file.GetName();
-        this.id = file.GetFullName();
-        this.contextValue = "file";
+        var proj_view = this.parent_.GetParent();
+        var proj_model = undefined;
+        if (proj_view) {
+            proj_model = proj_view.GetModel() as model.Project;
+            this.id = proj_view.GetModel().GetFullName() + ":" + file.GetFullName();
+        } else {
+            this.id = file.GetFullName();
+        }
+        var file_properties = "r";
+        if (proj_model) {
+            if (!proj_model.IsReadOnly()) {
+                file_properties += "w";
+            } else {
+                file_properties += "n";
+            }
+        } else {
+            file_properties += "n";
+        }
+        this.contextValue = "file_" + file_properties;
         this.command = {
             command: 'CppSolutionExplorer.OpenFile',
             arguments: [this],
@@ -150,13 +167,21 @@ class ProjectLevelView extends ProjectViewItem {
         this.tooltip = project.GetFullName();
 
         this.id = project.GetFullName();
-        if (project.IsReadOnly()) {
-            this.label = project.GetName() + " (Import from VS)";
-            this.contextValue = "project(read only)";
+        var project_properties = "r";
+        if (!project.IsReadOnly()) {
+            project_properties += "w";
         } else {
-            this.label = project.GetName();
-            this.contextValue = "project";
+            project_properties += "n";
         }
+        if (project.CanBuild()) {
+            project_properties += "b";
+        } else {
+            project_properties += "n";
+        }
+
+        this.label = project.GetName();
+        this.contextValue = "project_" + project_properties;
+
         this.children_ = [];
         for(var i = 0; i < groups.length; i++) {
             this.children_.push(new FileGroupLevelView(groups[i], this));

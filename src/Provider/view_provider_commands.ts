@@ -7,6 +7,7 @@ import * as model from "../model/project";
 import * as event from "./view_provider_events";
 import * as worker from "../utils/worker";
 import * as global from "../utils/globals";
+import * as cmake from "../Provider/cmake/tree_view_provider";
 
 
 function GetBuildTerminal(): vscode.Terminal {
@@ -37,6 +38,10 @@ abstract class AbsCommand {
     }
 
     public abstract async Run(item: view.ProjectViewItem) : Promise<void>;
+
+    GetProvider() {
+        return this.provider_;
+    }
 }
 
 class OpenFileCommand extends AbsCommand{
@@ -58,6 +63,29 @@ class OpenFileCommand extends AbsCommand{
     }
 }
 
+class GenerateCMakeCommand extends AbsCommand {
+    constructor(provider: absprovider.TreeViewProviderProjects) {
+        super(provider);
+    }
+
+    async Run(item: view.ProjectViewItem) : Promise<void> {
+        const terminal = GetBuildTerminal();
+        terminal.show();
+
+        var root_path = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./"
+        var work_dir = path.join(root_path, "BuildFiles")
+        if (!fs.existsSync(work_dir)) {
+            fs.mkdirSync(work_dir);
+        }
+        terminal.sendText("cd " + work_dir);
+        terminal.sendText('cmake -G "CodeBlocks - Unix Makefiles" ..')
+        terminal.sendText("cd " + root_path);
+
+        var cmake_provider = this.provider_ as cmake.TreeViewProvider;
+        cmake_provider.ReloadProject(path.join(root_path, "CMakeLists.txt"))
+    }
+}
+
 class BuildProjectCommand extends AbsCommand{
     constructor(provider: absprovider.TreeViewProviderProjects) {
         super(provider);
@@ -70,7 +98,10 @@ class BuildProjectCommand extends AbsCommand{
             var cmd = project_model.GetBuildTask().command;
             const terminal = GetBuildTerminal();
             terminal.show();
+            var root_path = vscode.workspace.rootPath ? vscode.workspace.rootPath : "./"
+            terminal.sendText("cd " + root_path);
             terminal.sendText(cmd, true);
+            terminal.sendText("cd " + root_path);
         } else {
             return;
         }
@@ -126,7 +157,7 @@ class FindFileCommand extends AbsCommand{
             // get file name from user
             let options: vscode.InputBoxOptions = {
                 prompt: "Please input file name: ",
-                placeHolder: ""
+                value: ""
             };
             
             var file_name = "";
@@ -179,7 +210,7 @@ class FindInSolutionCommand extends AbsCommand{
         var search_value = vscode.window.activeTextEditor.document.getText(vscode.window.activeTextEditor.selection);
         let options: vscode.InputBoxOptions = {
             prompt: "Please input text: ",
-            placeHolder: search_value
+            value: search_value
         };
         await vscode.window.showInputBox(options).then(value => {
             if (!value) { return; }
@@ -270,6 +301,10 @@ async function DoChangeConfigCommand(item: view.ProjectViewItem) : Promise<void>
     });
 }
 
+async function RefreshTreeView(cmd: AbsCommand, item: view.ProjectViewItem)  : Promise<void> {
+    cmd.GetProvider().Refresh();
+}
+
 class ChangeConfigCommand extends AbsCommand{
     
     constructor(provider: absprovider.TreeViewProviderProjects) {
@@ -304,7 +339,7 @@ export class AddFileCommand extends AbsCommand{
     async Run(item: view.ProjectViewItem) : Promise<void> {
         let options: vscode.InputBoxOptions = {
             prompt: "Input file name: ",
-            placeHolder: ""
+            value: ""
         };
         var file_name = "";
         await vscode.window.showInputBox(options).then(value => {
@@ -318,7 +353,7 @@ export class AddFileCommand extends AbsCommand{
 
         var proj = item.GetModel() as model.Project;
         proj.AddFile(file_name);
-        vscode.commands.executeCommand("CppSolutionExplorer.Refresh");
+        RefreshTreeView(this, item);
     }
 }
 
@@ -328,7 +363,23 @@ export class DeleteFileCommand extends AbsCommand{
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-        
+        var message_option: vscode.MessageOptions = {
+            modal: true
+        };
+        var answer = await vscode.window.showWarningMessage("Delete this file?",
+                message_option, "Yes");
+        if (!answer || answer !== "Yes") {
+            return;
+        }
+        var model_file = item.GetModel() as model.File;
+        var path = model_file.GetFullName();
+        var group = item.GetParent();
+        if (!group) { return; }
+        var project = group.GetParent();
+        if (!project) { return; }
+        var project_model = project.GetModel() as model.Project;
+        project_model.DeleteFile(path);
+        RefreshTreeView(this, item);
     }
 }
 
@@ -378,7 +429,7 @@ export class RefreshCommand extends AbsCommand{
     }
 
     async Run(item: view.ProjectViewItem) : Promise<void> {
-        this.provider_.Refresh();
+        RefreshTreeView(this, item);
     }
 }
 
@@ -402,6 +453,7 @@ export class TreeViewProviderProjectsCommands {
         this.commands_.set("DeleteProject", new DeleteProjectCommand(provider));
         this.commands_.set("RenameProject", new RenameProjectCommand(provider));
         this.commands_.set("Refresh", new RefreshCommand(provider));
+        this.commands_.set("GenerateCMake", new GenerateCMakeCommand(provider));
 
     }
 

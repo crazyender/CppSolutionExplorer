@@ -1,5 +1,5 @@
 import * as path from 'path';
-import {Task} from 'vscode';
+import * as fs from "fs";
 import * as globals from '../utils/globals';
 
 class PlatformSpecificConfiguration {
@@ -118,6 +118,7 @@ export class Project extends AbsModel {
   private clean_command_: Map<string, string>;
   private root_dir_: Map<string, string>;
   private readonly_: boolean;
+  private can_build_: boolean;
   private binary_: string;
   private path_: string;
   private cpp_standard: Map<string, string> = new Map<string, string>();
@@ -128,7 +129,7 @@ export class Project extends AbsModel {
       include_dirs: Map<string, string[]>, compile_flags: Map<string, string[]>,
       root_dir: Map<string, string>, binary: string,
       build_command: Map<string, string>, clean_command: Map<string, string>,
-      readonly: boolean) {
+      readonly: boolean, can_build: boolean) {
     super(name, full_name);
     this.files_ = files;
     this.path_ = file_path;
@@ -140,6 +141,7 @@ export class Project extends AbsModel {
     this.root_dir_ = root_dir;
     this.binary_ = binary;
     this.readonly_ = readonly;
+    this.can_build_ = can_build;
     this.files_.forEach((value, key, self) => {
       value.forEach((file, index, self) => {
         this.raw_files_.push(file);
@@ -237,8 +239,7 @@ export class Project extends AbsModel {
     }
     config.program = this.binary_;
     var cwd = this.root_dir_.get(globals.GlobalVarients.selected_config);
-    console.log('selected_config: ' + globals.GlobalVarients.selected_config);
-    config.cwd = cwd ? cwd : 'xx';
+    config.cwd = cwd ? cwd : '';
     config.preLaunchTask = 'Build ' + this.GetFullName();
     config.linux.MIMode = 'gdb';
     config.osx.MIMode = 'lldb';
@@ -247,6 +248,10 @@ export class Project extends AbsModel {
 
   IsReadOnly() {
     return this.readonly_;
+  }
+
+  CanBuild() {
+    return this.can_build_;
   }
 
   GetPropertyConfig(): PropertyConfig {
@@ -312,7 +317,10 @@ export class Project extends AbsModel {
   }
 
   AddFile(f: string) {
-    f = path.join(this.path_, f);
+    f = path.join(path.dirname(this.path_), f);
+    if (!fs.existsSync(f)) {
+      fs.writeFileSync(f, "");
+    }
     var group_name = globals.GetFileGroupNameFromFile(f);
     this.raw_files_.push(f);
     var files = this.files_.get(group_name);
@@ -335,5 +343,6 @@ export class Project extends AbsModel {
       });
       this.files_.set(group_name, files);
     }
+    fs.unlinkSync(file);
   }
 }

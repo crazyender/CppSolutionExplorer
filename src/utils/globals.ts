@@ -1,9 +1,12 @@
 import * as path from "path";
+import * as vscode from "vscode";
 
 export const GlobalVarients = {
     in_use_project_ : "",
-    selected_config : ""
+    selected_config : "",
+    tree_view: {}
 };
+
 
 export function GetFileGroupNameFromFile(file: string): string {
     var ext = path.extname(file);
@@ -23,6 +26,10 @@ export function GetFileGroupNameFromFile(file: string): string {
       case '.java':
         return 'Java Files';
       default:
-        return 'Object Files';
+        if (path.basename(file) === "CMakeLists.txt") {
+          return "CMake Files"
+        } else {
+          return 'Object Files';
+        }
     }
   }

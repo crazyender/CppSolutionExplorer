@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as gn from "../Provider/gn/tree_view_provider";
 import * as vs from "../Provider/vs/tree_view_provider";
+import * as cmake from "../Provider/cmake/tree_view_provider";
 import * as Null from "../Provider/null/tree_view_provider";
 import * as command from "./view_provider_commands";
 import * as event from "./view_provider_events";
@@ -20,9 +21,15 @@ export function CreateTreeView() {
 
     var gn_files : string[] = [];
     var sln_files : string[] = [];
+    var cmake_files : string[] = [];
     fs.readdirSync(root_path).forEach(file => {
         var full_path = path.join(root_path, file);
         var ext = path.extname(full_path);
+
+        if (path.basename(full_path) === "CMakeLists.txt") {
+            cmake_files.push(full_path);
+        }
+
         if (ext === ".sln") {
             sln_files.push(full_path);
         }
@@ -32,7 +39,16 @@ export function CreateTreeView() {
         }
     });
 
-    if (gn_files.length) {
+    if (cmake_files.length) {
+        var build_path = path.join(root_path, "BuildFiles");
+        if (!fs.existsSync(build_path)) {
+            fs.mkdirSync(build_path);
+        }
+        vscode.commands.executeCommand("CppSolutionExplorer.GenerateCMake");
+        provider = new cmake.TreeViewProvider(cmake_files);
+        event.WatchProject(root_path, provider)
+        return provider;
+    } if (gn_files.length) {
         return new gn.TreeViewProvider(gn_files);
     } else if (sln_files.length) {
         return new vs.TreeViewProvider(sln_files);

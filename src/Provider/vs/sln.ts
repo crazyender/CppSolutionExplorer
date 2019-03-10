@@ -52,6 +52,7 @@ export class Sln {
         file_path = path.join(
             vscode.workspace.rootPath ? vscode.workspace.rootPath : './',
             file_path);
+        file_path = path.normalize(file_path).split("\\").join("/");
         uuid = uuid.substr(1, uuid.length - 2);
         if (file_path.endsWith('vcxproj')) {
           var project = new vcproj.Project(name, file_path, uuid);

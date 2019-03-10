@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as factory from "./Provider/view_provider_factory";
+import * as globals from "./utils/globals";
 
 var cpp_commands : any = undefined
 var cpp_events : any = undefined
@@ -11,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
     var provider = factory.CreateTreeView()
     cpp_commands = factory.RegisterCommand(provider)
     cpp_events = factory.RegisterEvents()
-    vscode.window.registerTreeDataProvider('CppSolutionView', provider);
+    globals.GlobalVarients.tree_view = vscode.window.createTreeView("CppSolutionView", {treeDataProvider: provider});
 
     vscode.commands.executeCommand("CppSolutionView.ChangeConfig");
 }
