@@ -2,6 +2,7 @@
 	"name": "cppsolution",
 	"displayName": "CppSolution",
 	"description": "make vscode powerfull",
+	"publisher": "Agora",
 	"version": "0.0.1",
 	"engines": {
 		"vscode": "^1.31.0"
@@ -32,6 +33,10 @@
 			]
 		},
 		"commands": [
+			{
+				"command": "CppSolutionExplorer.GenerateCMake",
+				"title": "Refresh"
+			},
 			{
 				"command": "CppSolutionExplorer.BuildProject",
 				"title": "Build"
@@ -71,6 +76,11 @@
 			"view/item/context": [
 				{
 					"command": "CppSolutionExplorer.FindFile",
+					"when": "view == CppSolutionView && viewItem == toplevel",
+					"group": "inline"
+				},
+				{
+					"command": "CppSolutionExplorer.GenerateCMake",
 					"when": "view == CppSolutionView && viewItem == toplevel",
 					"group": "inline"
 				},
@@ -126,6 +136,20 @@
 				}
 			]
 		},
+		"configuration": {
+			"type": "object",
+			"title": "CppSolutionExplorer configuration",
+			"properties": {
+				"cpp_solution.extra_cmake_flags": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Extra flags when generating cmake project"
+				}
+			}
+		},
 		"keybindings": [
 			{
 				"command": "CppSolutionExplorer.FindInSolution",
@@ -145,8 +169,10 @@
 		"@types/node": "^10.12.27",
 		"tslint": "^5.13.1",
 		"typescript": "^3.3.3333",
-		"vscode": "^1.1.30",
-		"xml2js": "^0.4.19",
+		"vscode": "^1.1.30"
+	},
+	"dependencies": {
+		"xml2js": "*",
 		"@types/xml2js": "*"
 	}
 }

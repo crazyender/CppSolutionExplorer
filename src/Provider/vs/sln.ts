@@ -41,7 +41,7 @@ export class Sln {
     var lines = fs.readFileSync(this.file_).toString().split('\n');
     lines.forEach((line, index, self) => {
       var l = line.trim();
-      if (l.startsWith('Project')) {
+      if (l.startsWith('Project(')) {
         var contents = l.split(',');
         var name = contents[0];
         var file_path = contents[1].trim();
@@ -49,10 +49,8 @@ export class Sln {
         name = name.split('=')[1].trim();
         name = name.substr(1, name.length - 2);
         file_path = file_path.substr(1, file_path.length - 2);
-        file_path = path.join(
-            vscode.workspace.rootPath ? vscode.workspace.rootPath : './',
-            file_path);
-        file_path = path.normalize(file_path).split("\\").join("/");
+        file_path = path.join(path.dirname(this.file_), file_path);
+        file_path = path.normalize(file_path).split('\\').join('/');
         uuid = uuid.substr(1, uuid.length - 2);
         if (file_path.endsWith('vcxproj')) {
           var project = new vcproj.Project(name, file_path, uuid);

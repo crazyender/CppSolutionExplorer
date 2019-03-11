@@ -45,31 +45,29 @@ class ProjectConfigProperty {
 }
 
 class ProjectProperty {
-  public Condition: string;
-  public link_incremental: string;
-  public target_name: string;
-  public out_dir: string;
+  public link_incremental: Map<string, string> = new Map<string, string>();
+  public target_name: Map<string, string> = new Map<string, string>();
+  public out_dir: Map<string, string> = new Map<string, string>();
 
   constructor(obj: any) {
-    this.Condition = GetCondition(obj);
-    this.link_incremental =
-        obj.hasOwnProperty('LinkIncremental') ? obj.LinkIncremental[0] : '';
-    this.target_name =
-        obj.hasOwnProperty('TargetName') ? obj.TargetName[0] : '';
-    this.out_dir = obj.hasOwnProperty('OutDir') ? obj.OutDir[0] : '';
-    var platform = '';
-
-    if (this.Condition) {
-      platform = this.Condition.split('|')[1]
-    } else {
-      platform = 'Win32';
+    if (obj.hasOwnProperty('LinkIncremental')) {
+      for (var i = 0; i < obj.LinkIncremental.length; i++) {
+        var tmp_obj = obj.LinkIncremental[i];
+        this.link_incremental.set(GetCondition(tmp_obj), tmp_obj._);
+      }
     }
 
-    if (this.out_dir === '') {
-      if (platform === 'Win32' || platform === 'x86') {
-        this.out_dir = '$(SolutionDir)$(Configuration)/';
-      } else {
-        this.out_dir = '$(SolutionDir)$(Platform)/$(Configuration)/';
+    if (obj.hasOwnProperty('TargetName')) {
+      for (var i = 0; i < obj.TargetName.length; i++) {
+        var tmp_obj = obj.TargetName[i];
+        this.target_name.set(GetCondition(tmp_obj), tmp_obj._);
+      }
+    }
+
+    if (obj.hasOwnProperty('OutDir')) {
+      for (var i = 0; i < obj.OutDir.length; i++) {
+        var tmp_obj = obj.OutDir[i];
+        this.out_dir.set(GetCondition(tmp_obj), tmp_obj._);
       }
     }
   }
@@ -352,24 +350,28 @@ export class Project {
                 var g = new ProjectConfigProperty(elem);
                 this.project_config_property.set(g.Condition, g);
               } else if (
-                  elem.hasOwnProperty('$') && !elem.$.hasOwnProperty('Label')) {
+                  !elem.hasOwnProperty('$') ||
+                  !elem.$.hasOwnProperty('Label')) {
                 var p = new ProjectProperty(elem);
-                this.project_property.set(p.Condition, p);
+                this.project_property.set('', p);
               }
             });
       }
 
       this.compatiable_mode = false;
 
-      if (result.Project.hasOwnProperty("ImportGroup")) {
-        result.Project.ImportGroup.forEach((elem: any, index: Number, self: any) => {
-          if (elem.hasOwnProperty("$") && elem.$.hasOwnProperty("Label") && elem.$.Label === "ExtensionTargets") {
-            if (process.platform === "win32") {
-              // only msbuild from VisualStudio can handle ExtensionTargets property
-              this.compatiable_mode = true;
-            }
-          }
-        });
+      if (result.Project.hasOwnProperty('ImportGroup')) {
+        result.Project.ImportGroup.forEach(
+            (elem: any, index: Number, self: any) => {
+              if (elem.hasOwnProperty('$') && elem.$.hasOwnProperty('Label') &&
+                  elem.$.Label === 'ExtensionTargets') {
+                if (process.platform === 'win32') {
+                  // only msbuild from VisualStudio can handle ExtensionTargets
+                  // property
+                  this.compatiable_mode = true;
+                }
+              }
+            });
       }
     });
   }
@@ -526,32 +528,20 @@ export class Project {
   }
 
   GetOutputPath(config: string|undefined): string {
-    var no_condition = this.project_property.get('');
-    var no_condition_values = no_condition ? no_condition.out_dir : '';
+    var tmp = this.project_property.get('');
+    if (!tmp) return '';
+    var no_condition = tmp.out_dir.get('');
+    var no_condition_values = no_condition ? no_condition : '';
     if (!config || config === '') {
       return this.StringSubstitution([no_condition_values], config)[0];
     }
 
-    var condition = this.project_property.get(config);
-    var condition_values = condition ? condition.out_dir : '';
+    var condition = tmp.out_dir.get(config);
+    var condition_values = condition ? condition : '';
 
     return this.StringSubstitution([condition_values], config)[0];
   }
 
-  SetOutputPath(config: string|undefined, path: string) {
-    if (!config || config === '') {
-      var no_condition = this.project_property.get('');
-      if (no_condition) {
-        no_condition.out_dir = path;
-      }
-    } else {
-      var condition = this.project_property.get(config);
-      if (!condition) {
-        throw new Error('No such configuration: ' + config);
-      }
-      condition.out_dir = path;
-    }
-  }
 
   GetProjectType(config: string|undefined): string {
     var no_condition = this.project_config_property.get('');
@@ -580,6 +570,21 @@ export class Project {
       }
       condition.configuration_type = type;
     }
+  }
+
+  GetOutputBinray(config: string|undefined) {
+    var tmp = this.project_property.get('');
+    if (!tmp) return '';
+
+    var no_condition = tmp.target_name.get('');
+    var no_condition_values = no_condition ? no_condition : '';
+    if (!config || config === '') {
+      return this.StringSubstitution([no_condition_values], config)[0];
+    }
+
+    var condition = tmp.target_name.get(config);
+    var condition_values = condition ? condition : '';
+    return this.StringSubstitution([condition_values], config)[0];
   }
 
 

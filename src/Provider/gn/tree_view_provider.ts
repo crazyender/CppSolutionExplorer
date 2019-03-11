@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+
 import * as model from '../../Model/project';
+import * as globals from '../../utils/globals';
 import * as absprovider from '../project_view_provider';
-import * as globals from "../../utils/globals";
 
 export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
   private gn_file_content = undefined;
@@ -42,8 +43,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
           this.GetCompileFlags(gn_target_obj), this.GetWorkDir(gn_target_obj),
           this.GetBinaryName(gn_target_obj),
           this.GetBuildCommand(gn_target_obj),
-          this.GetCleanCommand(gn_target_obj),
-          true, true);
+          this.GetCleanCommand(gn_target_obj), true, true);
       projects.push(project);
     }
     return [projects, []];
@@ -164,7 +164,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     if (gn_target_obj.hasOwnProperty('dependency_output_file')) {
       target = gn_target_obj.dependency_output_file;
     }
-    return target;
+    var ret = new Map<string, string>();
+    ret.set('', target);
+    return ret;
   }
 
   private GetBuildCommand(gn_target_obj: any) {

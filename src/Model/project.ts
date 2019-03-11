@@ -1,5 +1,6 @@
+import * as fs from 'fs';
 import * as path from 'path';
-import * as fs from "fs";
+
 import * as globals from '../utils/globals';
 
 class PlatformSpecificConfiguration {
@@ -119,17 +120,18 @@ export class Project extends AbsModel {
   private root_dir_: Map<string, string>;
   private readonly_: boolean;
   private can_build_: boolean;
-  private binary_: string;
+  private binary_: Map<string, string>;
   private path_: string;
   private cpp_standard: Map<string, string> = new Map<string, string>();
   private c_standard: Map<string, string> = new Map<string, string>();
   constructor(
-      name: string, file_path: string, full_name: string, project_type: Map<string, string>,
-      files: Map<string, string[]>, defines: Map<string, string[]>,
-      include_dirs: Map<string, string[]>, compile_flags: Map<string, string[]>,
-      root_dir: Map<string, string>, binary: string,
-      build_command: Map<string, string>, clean_command: Map<string, string>,
-      readonly: boolean, can_build: boolean) {
+      name: string, file_path: string, full_name: string,
+      project_type: Map<string, string>, files: Map<string, string[]>,
+      defines: Map<string, string[]>, include_dirs: Map<string, string[]>,
+      compile_flags: Map<string, string[]>, root_dir: Map<string, string>,
+      binary: Map<string, string>, build_command: Map<string, string>,
+      clean_command: Map<string, string>, readonly: boolean,
+      can_build: boolean) {
     super(name, full_name);
     this.files_ = files;
     this.path_ = file_path;
@@ -237,7 +239,8 @@ export class Project extends AbsModel {
     } else {
       config.type = 'cppdbg';
     }
-    config.program = this.binary_;
+    var program = this.binary_.get(globals.GlobalVarients.selected_config);
+    config.program = program ? program : '';
     var cwd = this.root_dir_.get(globals.GlobalVarients.selected_config);
     config.cwd = cwd ? cwd : '';
     config.preLaunchTask = 'Build ' + this.GetFullName();
@@ -260,10 +263,14 @@ export class Project extends AbsModel {
     config.name = this.GetFullName();
     config.includePath = this.GetIncludePathes();
     config.defines = this.GetDefines();
-    config.cStandard =
-        'c' + this.c_standard.get(globals.GlobalVarients.selected_config);
-    config.cppStandard =
-        'c++' + this.cpp_standard.get(globals.GlobalVarients.selected_config);
+    if (this.c_standard.get(globals.GlobalVarients.selected_config)) {
+      config.cStandard =
+          'c' + this.c_standard.get(globals.GlobalVarients.selected_config);
+    }
+    if (this.cpp_standard.get(globals.GlobalVarients.selected_config)) {
+      config.cppStandard =
+          'c++' + this.cpp_standard.get(globals.GlobalVarients.selected_config);
+    }
     property.configurations.push(config);
     return property;
   }
@@ -319,7 +326,7 @@ export class Project extends AbsModel {
   AddFile(f: string) {
     f = path.join(path.dirname(this.path_), f);
     if (!fs.existsSync(f)) {
-      fs.writeFileSync(f, "");
+      fs.writeFileSync(f, '');
     }
     var group_name = globals.GetFileGroupNameFromFile(f);
     this.raw_files_.push(f);
