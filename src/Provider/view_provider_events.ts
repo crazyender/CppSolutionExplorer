@@ -40,8 +40,8 @@ export function WatchProject(
         vs_provider.RefreshProject(cmake_file);
       }, 2000);
 
-    } else if (file === 'Project.cbp') {
-      if (fs.existsSync(watch_file)) {
+    } else if (file.endsWith(".cbp")) {
+      if (fs.existsSync(file)) {
         var cmake_provider = provider as cmake.TreeViewProvider;
         cmake_provider.RefreshProject(cmake_file);
       }

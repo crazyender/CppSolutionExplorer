@@ -26,8 +26,16 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
   public ReloadProject(file: string): [model.Project[], string[]] {
     var sln_name = path.basename(path.dirname(file));
     var root = vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
-    var proj_file = path.join(root, 'BuildFiles', 'Project.cbp');
-    if (!fs.existsSync(proj_file)) {
+    var proj_path = path.join(root, 'BuildFiles');
+    var files = fs.readdirSync(proj_path);
+    var proj_file = "";
+    for (var i = 0; i < files.length; i++) {
+      if (files[i].endsWith(".cbp")) {
+        proj_file = path.join(proj_path, files[i]);
+        break;
+      }
+    }
+    if (proj_file === "" || !fs.existsSync(proj_file)) {
       return [[], []];
     }
     var content = fs.readFileSync(proj_file).toString();
@@ -57,6 +65,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         var binary = '';
         var includes: string[] = [];
         var flags: string[] = [];
+        if (name.endsWith("/fast")) {
+          continue;
+        }
         if (targets[i].hasOwnProperty('Option')) {
           for (var j = 0; j < targets[i].Option.length; j++) {
             if (targets[i].Option[j].$.hasOwnProperty('type')) {

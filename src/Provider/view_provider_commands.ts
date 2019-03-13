@@ -78,6 +78,7 @@ class GenerateCMakeCommand extends AbsCommand {
     if (!fs.existsSync(work_dir)) {
       fs.mkdirSync(work_dir);
     }
+    terminal.sendText('reset');
     terminal.sendText('cd "' + work_dir + '"');
     var vs_config = vscode.workspace.getConfiguration('cpp_solution');
     var extra_flags = vs_config.get<string[]>('extra_cmake_flags', []);
@@ -110,6 +111,7 @@ class BuildProjectCommand extends AbsCommand {
       terminal.show();
       var root_path =
           vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
+      terminal.sendText('reset');
       terminal.sendText('cd "' + root_path + '"');
       terminal.sendText(cmd, true);
       terminal.sendText('cd "' + root_path + '"');
