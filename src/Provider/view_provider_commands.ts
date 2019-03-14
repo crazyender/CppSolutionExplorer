@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import * as model from '../model/project';
+import * as model from '../Model/project';
 import * as cmake from '../Provider/cmake/tree_view_provider';
 import * as global from '../utils/globals';
 import * as worker from '../utils/worker';
@@ -84,8 +84,12 @@ class GenerateCMakeCommand extends AbsCommand {
     var extra_flags = vs_config.get<string[]>('extra_cmake_flags', []);
     var extra_flags_value = extra_flags.join(' ');
     if (process.platform === 'win32') {
-      terminal.sendText(
-          'cmake -G "Visual Studio 15 Win64" .. ' + extra_flags_value);
+      var generator = 'Visual Studio 15';
+      var platform = vs_config.get<string>('vs_platform', '');
+      if (platform !== '') {
+        generator = generator + ' ' + platform;
+      }
+      terminal.sendText('cmake -G "' + generator + '" .. ' + extra_flags_value);
     } else {
       terminal.sendText(
           'cmake -G "CodeBlocks - Unix Makefiles" .. ' + extra_flags_value);

@@ -147,6 +147,11 @@
 					},
 					"default": [],
 					"description": "Extra flags when generating cmake project"
+				},
+				"cpp_solution.vs_platform": {
+					"type": "string",
+					"default": "",
+					"description": "Platform name for Visual Studio generator"
 				}
 			}
 		},

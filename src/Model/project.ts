@@ -246,6 +246,14 @@ export class Project extends AbsModel {
     config.preLaunchTask = 'Build ' + this.GetFullName();
     config.linux.MIMode = 'gdb';
     config.osx.MIMode = 'lldb';
+    if (config.program !== '' && config.program[0] !== '/' &&
+        !(config.program.length > 2 && config.program[1] === ':')) {
+      config.program = path.join(config.cwd, config.program);
+      config.program = path.normalize(config.program);
+    }
+    if (process.platform !== 'win32') {
+      config.externalConsole = false;
+    }
     return config;
   }
 
