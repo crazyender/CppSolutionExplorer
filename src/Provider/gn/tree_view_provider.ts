@@ -174,8 +174,8 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     if (gn_target_obj.hasOwnProperty('ninja_path')) {
       ninja = gn_target_obj.ninja_path;
     }
-    var work_dir = this.GetWorkDir(gn_target_obj);
-    var target = this.GetBinaryName(gn_target_obj);
+    var work_dir = this.GetWorkDir(gn_target_obj).get('');
+    var target = this.GetBinaryName(gn_target_obj).get('');
     var ret = new Map<string, string>();
     ret.set('', ninja + ' -C ' + work_dir + ' ' + target);
     return ret;

@@ -28,14 +28,14 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     var root = vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
     var proj_path = path.join(root, 'BuildFiles');
     var files = fs.readdirSync(proj_path);
-    var proj_file = "";
+    var proj_file = '';
     for (var i = 0; i < files.length; i++) {
-      if (files[i].endsWith(".cbp")) {
+      if (files[i].endsWith('.cbp')) {
         proj_file = path.join(proj_path, files[i]);
         break;
       }
     }
-    if (proj_file === "" || !fs.existsSync(proj_file)) {
+    if (proj_file === '' || !fs.existsSync(proj_file)) {
       return [[], []];
     }
     var content = fs.readFileSync(proj_file).toString();
@@ -65,7 +65,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
         var binary = '';
         var includes: string[] = [];
         var flags: string[] = [];
-        if (name.endsWith("/fast")) {
+        if (name.endsWith('/fast')) {
           continue;
         }
         if (targets[i].hasOwnProperty('Option')) {
@@ -215,7 +215,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     this.projects_ = {};
     this.configs_ = {};
     this.projects_[this.solutions[0]] = proj;
-    this.configs_[this.solutions[0]] = [];
+    this.configs_[this.solutions[0]] = config;
     this.Refresh();
   }
 

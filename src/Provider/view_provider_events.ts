@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 
 import * as cmake from '../Provider/cmake/tree_view_provider';
 import * as absprovider from '../Provider/project_view_provider';
-import * as vs from '../Provider/vs/tree_view_provider';
 import * as view from '../View/item';
 
 export class TreeViewProviderProjectsEvents {
@@ -31,16 +30,15 @@ export function WatchProject(
     fs.mkdirSync(file_path);
   }
 
-  var watch_file = path.join(file_path, 'Project.cbp');
   var cmake_file = path.join(root_path, 'CMakeLists.txt');
   fs.watch(file_path, {}, (e, file) => {
-    if (file.endsWith('.sln') || file.endsWith('.vcxproj')) {
-      var vs_provider = provider as vs.TreeViewProvider;
+    if (file.endsWith('.sln')) {
+      var vs_provider = provider as cmake.TreeViewProvider;
       setTimeout(() => {
         vs_provider.RefreshProject(cmake_file);
       }, 2000);
 
-    } else if (file.endsWith(".cbp")) {
+    } else if (file.endsWith('.cbp')) {
       if (fs.existsSync(file)) {
         var cmake_provider = provider as cmake.TreeViewProvider;
         cmake_provider.RefreshProject(cmake_file);
