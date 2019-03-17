@@ -39,10 +39,10 @@ export function WatchProject(
       }, 2000);
 
     } else if (file.endsWith('.cbp')) {
-      if (fs.existsSync(file)) {
-        var cmake_provider = provider as cmake.TreeViewProvider;
+      var cmake_provider = provider as cmake.TreeViewProvider;
+      setTimeout(() => {
         cmake_provider.RefreshProject(cmake_file);
-      }
+      }, 200);
     }
   });
 

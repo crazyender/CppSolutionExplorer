@@ -375,6 +375,7 @@ export class SelectConfigCommand extends AbsCommand {
 
     global.GlobalVarients.selected_config = item.label ? item.label : '';
     DoChangeConfigCommand(item);
+    this.provider_.Refresh();
   }
 }
 
@@ -487,12 +488,6 @@ export class TreeViewProviderProjectsCommands {
     this.commands_.set('FindFile', new FindFileCommand(provider));
     this.commands_.set('FindInSolution', new FindInSolutionCommand(provider));
     this.commands_.set('SelectConfig', new SelectConfigCommand(provider));
-    this.commands_.set('AddFile', new AddFileCommand(provider));
-    this.commands_.set('DeleteFile', new DeleteFileCommand(provider));
-    this.commands_.set('RenameFile', new RenameFileCommand(provider));
-    this.commands_.set('AddProject', new AddProjectCommand(provider));
-    this.commands_.set('DeleteProject', new DeleteProjectCommand(provider));
-    this.commands_.set('RenameProject', new RenameProjectCommand(provider));
     this.commands_.set('Refresh', new RefreshCommand(provider));
     this.commands_.set('GenerateCMake', new GenerateCMakeCommand(provider));
   }

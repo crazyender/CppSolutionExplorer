@@ -155,7 +155,6 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     this.configs_ = {};
     this.projects_[this.solutions[0]] = proj;
     this.configs_[this.solutions[0]] = config;
-    console.log(this.configs_);
     this.Refresh();
   }
 }
