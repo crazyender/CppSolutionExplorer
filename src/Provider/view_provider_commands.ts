@@ -115,7 +115,12 @@ class BuildProjectCommand extends AbsCommand {
       terminal.show();
       var root_path =
           vscode.workspace.rootPath ? vscode.workspace.rootPath : './';
-      terminal.sendText('reset');
+      if (process.platform === 'win32') {
+        terminal.sendText('cls');
+      } else {
+        terminal.sendText('reset');
+      }
+
       terminal.sendText('cd "' + root_path + '"');
       terminal.sendText(cmd, true);
       terminal.sendText('cd "' + root_path + '"');

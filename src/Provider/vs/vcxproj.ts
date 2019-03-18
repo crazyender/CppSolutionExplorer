@@ -530,16 +530,34 @@ export class Project {
   GetOutputPath(config: string|undefined): string {
     var tmp = this.project_property.get('');
     if (!tmp) return '';
-    var no_condition = tmp.out_dir.get('');
-    var no_condition_values = no_condition ? no_condition : '';
+
+    var out_path = '';
     if (!config || config === '') {
-      return this.StringSubstitution([no_condition_values], config)[0];
+      var no_condition = tmp.out_dir.get('');
+      var no_condition_values = no_condition ? no_condition : '';
+      out_path = no_condition_values;
+    } else {
+      var condition = tmp.out_dir.get(config);
+      var condition_values = condition ? condition : '';
+      out_path = condition_values;
     }
 
-    var condition = tmp.out_dir.get(config);
-    var condition_values = condition ? condition : '';
+    if (out_path === '') {
+      if (!config) {
+        out_path = '$(SolutionDir)$(Configuration)';
+      } else {
+        var platform = config.split('|')[1];
+        if (platform === 'Win32' || platform === 'x86') {
+          out_path = '$(SolutionDir)$(Configuration)';
+        } else {
+          out_path = '$(SolutionDir)$(PlatformShortName)/$(Configuration)';
+        }
+      }
+    }
 
-    return this.StringSubstitution([condition_values], config)[0];
+    var ret = this.StringSubstitution([out_path], config)[0];
+    ret = path.normalize(ret);
+    return ret;
   }
 
 
@@ -576,15 +594,22 @@ export class Project {
     var tmp = this.project_property.get('');
     if (!tmp) return '';
 
-    var no_condition = tmp.target_name.get('');
-    var no_condition_values = no_condition ? no_condition : '';
+    var out_binary = '';
     if (!config || config === '') {
-      return this.StringSubstitution([no_condition_values], config)[0];
+      var no_condition = tmp.target_name.get('');
+      var no_condition_values = no_condition ? no_condition : '';
+      out_binary = no_condition_values;
+    } else {
+      var condition = tmp.target_name.get(config);
+      var condition_values = condition ? condition : '';
+      out_binary = condition_values;
     }
 
-    var condition = tmp.target_name.get(config);
-    var condition_values = condition ? condition : '';
-    return this.StringSubstitution([condition_values], config)[0];
+    if (out_binary) {
+      return this.StringSubstitution([out_binary], config)[0];
+    } else {
+      return this.GetName();
+    }
   }
 
 
