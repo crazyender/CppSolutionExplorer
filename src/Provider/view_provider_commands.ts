@@ -78,7 +78,11 @@ class GenerateCMakeCommand extends AbsCommand {
     if (!fs.existsSync(work_dir)) {
       fs.mkdirSync(work_dir);
     }
-    terminal.sendText('reset');
+    if (process.platform === 'win32') {
+      terminal.sendText('cls');
+    } else {
+      terminal.sendText('reset');
+    }
     terminal.sendText('cd "' + work_dir + '"');
     var vs_config = vscode.workspace.getConfiguration('cpp_solution');
     var extra_flags = vs_config.get<string[]>('extra_cmake_flags', []);
@@ -97,7 +101,7 @@ class GenerateCMakeCommand extends AbsCommand {
     terminal.sendText('cd "' + root_path + '"');
 
     var cmake_provider = this.provider_ as cmake.TreeViewProvider;
-    cmake_provider.ReloadProject(path.join(root_path, 'CMakeLists.txt'))
+    cmake_provider.ReloadProject(path.join(root_path, 'CMakeLists.txt'));
   }
 }
 
@@ -174,51 +178,27 @@ class FindFileCommand extends AbsCommand {
   }
 
   async Run(item: view.ProjectViewItem): Promise<void> {
-    if (item.GetItemType() === view.ItemType.TOP_LEVEL) {
-      // get file name from user
-      let options: vscode.InputBoxOptions = {
-        prompt: 'Please input file name: ',
-        value: ''
-      };
-
-      var file_name = '';
-      await vscode.window.showInputBox(options).then(value => {
-        if (!value) {
-          return;
+    var selected_file = '';
+    var files = event.GetAlFilesFromCache();
+    files.unshift('---------------------');
+    await vscode.window.showQuickPick(files, {
+      canPickMany: false,
+      onDidSelectItem: (item) => {
+        if (typeof (item) === 'string') {
+          selected_file = item;
+        } else {
+          selected_file = item.label;
         }
-        file_name = value;
-      });
-
-      if (file_name === '') {
-        return;
       }
-
-      var panel = GetFindResultPanel();
-      panel.show();
-      panel.clear();
-      var projects = item.GetChildren();
-      var total_count = 0;
-      var file_count = 0;
-      var w = worker.CreateWorker('project', projects, (project) => {
-        if (project.contextValue === 'configs') {
-          return;
-        }
-        var project_model = project.GetModel() as model.Project;
-        var files = project_model.GetFiles();
-        worker.CreateWorker('file', files, (file) => {
-          if (process.platform === 'win32') {
-            file = '/' + file;
-          }
-          if (file.indexOf(file_name) !== -1) {
-            panel.appendLine('file://' + file);
-            file_count++;
-          }
-          total_count++;
-        }, () => {});
-      }, () => {});
-    } else {
+    });
+    if (selected_file === '---------------------') {
       return;
     }
+
+    let options:
+        vscode.TextDocumentShowOptions = {preview: false, preserveFocus: true};
+    let document = await vscode.workspace.openTextDocument(selected_file);
+    vscode.window.showTextDocument(document, options);
   }
 }
 

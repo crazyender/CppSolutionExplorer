@@ -8,7 +8,8 @@ import * as absprovider from '../Provider/project_view_provider';
 import * as view from '../View/item';
 
 export class TreeViewProviderProjectsEvents {
-  public static all_opened_doc: {[id: string]: view.ProjectViewItem;} = {};
+  public static all_opened_doc: Map<string, view.ProjectViewItem> =
+      new Map<string, view.ProjectViewItem>();
   constructor() {
     vscode.window.onDidChangeActiveTextEditor(e => {
       if (!e) {
@@ -65,7 +66,7 @@ export function AddFileCache(file: string, v: view.ProjectViewItem): void {
   if (process.platform === 'win32') {
     full_path = full_path.toLowerCase();
   }
-  TreeViewProviderProjectsEvents.all_opened_doc[full_path] = v;
+  TreeViewProviderProjectsEvents.all_opened_doc.set(full_path, v);
 }
 
 export function GetFileFromCache(file: string): view.ProjectViewItem|undefined {
@@ -73,5 +74,9 @@ export function GetFileFromCache(file: string): view.ProjectViewItem|undefined {
   if (process.platform === 'win32') {
     full_path = full_path.toLowerCase();
   }
-  return TreeViewProviderProjectsEvents.all_opened_doc[full_path];
+  return TreeViewProviderProjectsEvents.all_opened_doc.get(full_path);
+}
+
+export function GetAlFilesFromCache(): string[] {
+  return Array.from(TreeViewProviderProjectsEvents.all_opened_doc.keys());
 }

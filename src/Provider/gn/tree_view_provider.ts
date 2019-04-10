@@ -62,9 +62,11 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
     sources = sources.filter((file, index, self) => {
       var ext = path.extname(file);
-      if (ext === '.c' || ext === '.cpp' || ext === '.cc' || ext === '.cxx' ||
-          ext === '.h' || ext === '.hh' || ext === '.hpp' || ext === '.m' ||
-          ext === '.mm' || ext === '.java') {
+      if ([
+            '.c', '.cc', '.cpp', '.cxx', '.h', '.hh', '.hpp', '.m', '.mm',
+            '.java', '.cs', '.py', '.vb', '.lua', '.go', '.ts', '.js', '*.txt',
+            '*.html'
+          ].indexOf(ext) !== -1) {
         return true;
       }
       return false;
@@ -130,8 +132,10 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
             gn_target_obj.build_dir + 'environment.' + gn_args.target_cpu;
         var buff = fs.readFileSync(file);
         var index = buff.lastIndexOf('INCLUDE=');
+        var rindex = buff.indexOf('\u0000', index);
         if (index !== -1) {
-          var system_includes = buff.slice(index + 8).toString().split(';');
+          var system_includes =
+              buff.slice(index + 8, rindex).toString().split(';');
           system_includes.forEach((s, i, self) => {
             s = s.split('\\').join('/').split('\u0000').join('').trim();
             includes.push(s);

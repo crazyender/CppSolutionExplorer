@@ -75,11 +75,6 @@
 		"menus": {
 			"view/item/context": [
 				{
-					"command": "CppSolutionExplorer.FindFile",
-					"when": "view == CppSolutionView && viewItem == toplevel",
-					"group": "inline"
-				},
-				{
 					"command": "CppSolutionExplorer.GenerateCMake",
 					"when": "view == CppSolutionView && viewItem == toplevel",
 					"group": "inline"
@@ -159,6 +154,10 @@
 			{
 				"command": "CppSolutionExplorer.FindInSolution",
 				"key": "alt+shift+f"
+			},
+			{
+				"command": "CppSolutionExplorer.FindFile",
+				"key": "alt+shift+o"
 			}
 		]
 	},
