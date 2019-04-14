@@ -1,9 +1,13 @@
 {
 	"name": "cppsolution",
 	"displayName": "CppSolution",
-	"description": "make vscode powerfull",
-	"publisher": "Agora",
-	"version": "0.0.1",
+	"description": "Turn vscode into lightweight cross-platform IDE",
+	"publisher": "ZhengEnder",
+	"repository": {
+		"type": "Github",
+		"url": "https://github.com/crazyender/CppSolutionExplorer"
+	},
+	"version": "0.0.2",
 	"engines": {
 		"vscode": "^1.31.0"
 	},

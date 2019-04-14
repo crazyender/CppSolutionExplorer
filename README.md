@@ -35,6 +35,16 @@ Also you can build/rebuild/clean in project view.
 ### You can also build/rebuild/clean target from inside project view
 ![](img/2019-03-17-21-17-11.png)
 
+### Pickup a file from quick-pickup panel (shift+alt+o/shift+option+o)
+![](img/2019-04-14-13-07-57.png)
+
+
+Changelist
+
+* 0.0.2 Find files in solution
+* 0.0.1 Initial version, with cmake project support.
+
+
 
 ## Inspiration
 
@@ -47,14 +57,3 @@ Also you can build/rebuild/clean in project view.
 - vscode-solution-explorer
 
   This is a great extension that makes vscode so powerfull that you can forget about Visual Studio ( actually you can't :-) ) if you are from .Net world.
-
-- CMake Tools Helper
-
-  This extension is a bridge between cpptools and CMake Tools extension, it will generate c_cpp_property.json automatically.
-
-  During my developping of Cpp Solution Explorer I encounted a problem: you can't choose a configuration by command from cpptools, because cpptools.selectconfig function does not accept parameters like config name or config index or something like that, it always pops up a dialog and let users select a config. After hours of working I found out a dirty way: whenever "active document" changes I will re-generate the c_cpp_property.json and fill it with the configurations get from project that this active document belongs.
-
-  After some research I found that another extension "CMake Tools Helper" doing this the same way. I should do my research *before* coding :(
-
-
-
