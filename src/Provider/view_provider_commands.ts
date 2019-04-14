@@ -172,32 +172,39 @@ class CleanProjectCommand extends AbsCommand {
   }
 }
 
+class PickFileItem implements vscode.QuickPickItem {
+  label: string = '';
+  description?: string|undefined;
+  detail?: string|undefined;
+  picked?: boolean|undefined;
+  alwaysShow?: boolean|undefined;
+}
+
 class FindFileCommand extends AbsCommand {
   constructor(provider: absprovider.TreeViewProviderProjects) {
     super(provider);
   }
 
   async Run(item: view.ProjectViewItem): Promise<void> {
-    var selected_file = '';
     var files = event.GetAlFilesFromCache();
-    files.unshift('---------------------');
-    await vscode.window.showQuickPick(files, {
-      canPickMany: false,
-      onDidSelectItem: (item) => {
-        if (typeof (item) === 'string') {
-          selected_file = item;
-        } else {
-          selected_file = item.label;
-        }
-      }
-    });
-    if (selected_file === '---------------------') {
+    var items: PickFileItem[] = [];
+    for (var i = 0; i < files.length; i++) {
+      var pick: PickFileItem = new PickFileItem();
+      pick.label = path.basename(files[i])
+      pick.detail = files[i];
+      items.push(pick);
+    }
+    var selected_file = await vscode.window.showQuickPick(
+        items,
+        {canPickMany: false, matchOnDescription: false, matchOnDetail: false});
+    if (!selected_file || !selected_file.detail) {
       return;
     }
 
     let options:
         vscode.TextDocumentShowOptions = {preview: false, preserveFocus: true};
-    let document = await vscode.workspace.openTextDocument(selected_file);
+    let document =
+        await vscode.workspace.openTextDocument(selected_file.detail);
     vscode.window.showTextDocument(document, options);
   }
 }

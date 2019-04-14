@@ -39,13 +39,6 @@ Also you can build/rebuild/clean in project view.
 ![](img/2019-04-14-13-07-57.png)
 
 
-Changelist
-
-* 0.0.2 Find files in solution
-* 0.0.1 Initial version, with cmake project support.
-
-
-
 ## Inspiration
 
 - CLion
