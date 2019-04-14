@@ -1,3 +1,4 @@
+import * as exec from 'child_process'
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -5,7 +6,7 @@ import * as vscode from 'vscode';
 import * as model from '../Model/project';
 import * as cmake from '../Provider/cmake/tree_view_provider';
 import * as global from '../utils/globals';
-import * as worker from '../utils/worker';
+import * as symbolize from '../utils/symbolize'
 import * as view from '../View/item';
 
 import * as absprovider from './project_view_provider';
@@ -26,7 +27,7 @@ function GetBuildTerminal(): vscode.Terminal {
 }
 
 var g_output_channel_: any = undefined;
-function GetFindResultPanel(): vscode.OutputChannel {
+function GetOutputChannel(): vscode.OutputChannel {
   if (!g_output_channel_) {
     g_output_channel_ =
         vscode.window.createOutputChannel('Cpp Solution Explorer');
@@ -70,38 +71,47 @@ class GenerateCMakeCommand extends AbsCommand {
   }
 
   async Run(item: view.ProjectViewItem): Promise<void> {
-    const terminal = GetBuildTerminal();
-    terminal.show();
-
     var root_path = vscode.workspace.rootPath ? vscode.workspace.rootPath : './'
     var work_dir = path.join(root_path, 'BuildFiles')
     if (!fs.existsSync(work_dir)) {
       fs.mkdirSync(work_dir);
     }
-    if (process.platform === 'win32') {
-      terminal.sendText('cls');
-    } else {
-      terminal.sendText('reset');
-    }
-    terminal.sendText('cd "' + work_dir + '"');
+
     var vs_config = vscode.workspace.getConfiguration('cpp_solution');
     var extra_flags = vs_config.get<string[]>('extra_cmake_flags', []);
     var extra_flags_value = extra_flags.join(' ');
+    var cmd = ';'
     if (process.platform === 'win32') {
       var generator = 'Visual Studio 15';
       var platform = vs_config.get<string>('vs_platform', '');
       if (platform !== '') {
         generator = generator + ' ' + platform;
       }
-      terminal.sendText('cmake -G "' + generator + '" .. ' + extra_flags_value);
-    } else {
-      terminal.sendText(
-          'cmake -G "CodeBlocks - Unix Makefiles" .. ' + extra_flags_value);
+      cmd = 'cmake -G "' + generator + '" .. ' + extra_flags_value;
     }
-    terminal.sendText('cd "' + root_path + '"');
+    else {
+      cmd = 'cmake -G "CodeBlocks - Unix Makefiles" .. ' + extra_flags_value;
+    }
 
-    var cmake_provider = this.provider_ as cmake.TreeViewProvider;
-    cmake_provider.ReloadProject(path.join(root_path, 'CMakeLists.txt'));
+    var output = GetOutputChannel();
+    output.clear();
+    output.show();
+    var command_process = exec.spawn(cmd, {shell: true, cwd: work_dir});
+    command_process.stdout.on(
+        'data', (chunk) => {output.append(chunk.toString())});
+
+    command_process.stderr.on(
+        'data', (chunk) => {output.append(chunk.toString())});
+
+    command_process.on('close', (code, signal) => {
+      if (code !== 0) {
+        output.appendLine('Fail: exit with status ' + code);
+      } else {
+        output.hide()
+        var cmake_provider = this.provider_ as cmake.TreeViewProvider;
+        cmake_provider.ReloadProject(path.join(root_path, 'CMakeLists.txt'));
+      }
+    });
   }
 }
 
@@ -209,87 +219,106 @@ class FindFileCommand extends AbsCommand {
   }
 }
 
+class FindSymbolsCommand extends AbsCommand {
+  constructor(provider: absprovider.TreeViewProviderProjects) {
+    super(provider);
+  }
+
+  async Run(item: view.ProjectViewItem): Promise<void> {
+    var symbols = symbolize.all_global_symbols
+    var items: PickFileItem[] = [];
+    for (var i = 0; i < symbols.length; i++) {
+      var pick: PickFileItem = new PickFileItem();
+      pick.label = symbols[i].name
+      pick.description = symbols[i].line.toString()
+      pick.detail = symbols[i].file
+      items.push(pick);
+    }
+    var selected_file = await vscode.window.showQuickPick(
+        items,
+        {canPickMany: false, matchOnDescription: false, matchOnDetail: false});
+    if (!selected_file || !selected_file.detail) {
+      return;
+    }
+
+    let options:
+        vscode.TextDocumentShowOptions = {preview: false, preserveFocus: true};
+    let document =
+        await vscode.workspace.openTextDocument(selected_file.detail);
+    vscode.window.showTextDocument(document, options);
+
+
+    if (selected_file.description) {
+      var line = +selected_file.description
+      var sel = new vscode.Selection(line - 1, 0, line - 1, 0);
+      if (vscode.window.activeTextEditor) {
+        vscode.window.activeTextEditor.selection = sel;
+        vscode.window.activeTextEditor.revealRange(
+            sel, vscode.TextEditorRevealType.Default);
+      }
+    }
+  }
+}
+
 class FindInSolutionCommand extends AbsCommand {
   constructor(provider: absprovider.TreeViewProviderProjects) {
     super(provider);
   }
 
   async Run(item_: view.ProjectViewItem): Promise<void> {
-    if (!vscode.window.activeTextEditor) {
+    var search_value = ''
+    if (!vscode.workspace.rootPath) {
       return;
     }
-    if (vscode.window.activeTextEditor.selections.length > 1) {
-      return;
-    }
-    var file_path = vscode.window.activeTextEditor.document.fileName;
-    var search_value = vscode.window.activeTextEditor.document.getText(
-        vscode.window.activeTextEditor.selection);
-    let options: vscode.InputBoxOptions = {
-      prompt: 'Please input text: ',
-      value: search_value
-    };
-    await vscode.window.showInputBox(options).then(value => {
-      if (!value) {
+
+    if (vscode.window.activeTextEditor) {
+      if (vscode.window.activeTextEditor.selections.length > 1) {
         return;
       }
-      search_value = value;
-    });
+
+      search_value = vscode.window.activeTextEditor.document.getText(
+          vscode.window.activeTextEditor.selection);
+    }
 
     if (search_value === '') {
-      return;
-    }
-    var v = event.GetFileFromCache(file_path);
-    if (!v) {
-      return;
-    }
-    var item = v;
-    var p = v.GetParent();
-    if (p) {
-      var pp = p.GetParent();
-      if (pp) {
-        var ppp = pp.GetParent();
-        if (ppp) {
-          item = ppp;
-        }
+      let options: vscode.InputBoxOptions = {
+        prompt: 'Please input text: ',
+        value: search_value
+      };
+
+      var user_input = await vscode.window.showInputBox(options);
+      if (!user_input || user_input === '') {
+        return;
       }
+      search_value = user_input;
     }
 
-    if (item.GetItemType() === view.ItemType.TOP_LEVEL) {
-      var panel = GetFindResultPanel();
-      panel.show();
-      panel.clear();
-      var projects = item.GetChildren();
-      var record_count = 0;
-      var file_count = 0;
-      worker.CreateWorker('project', projects, (project) => {
-        if (project.contextValue === 'configs') {
-          return;
-        }
-        var project_model = project.GetModel() as model.Project;
-        var files = project_model.GetFiles();
-        worker.CreateWorker('file', files, (file) => {
-          var txt: string = fs.readFileSync(file).toString();
-          var lines = txt.split('\n');
-          var found = false;
-          if (process.platform === 'win32') {
-            file = '/' + file;
-          }
-          lines.forEach((line, index, self) => {
-            if (line.indexOf(search_value) !== -1) {
-              panel.appendLine(
-                  'file://' + file + '#L' + (index + 1) + ' : ' + line);
-              found = true;
-              record_count++;
-            }
-          });
-          if (found) {
-            file_count++;
-          }
-        }, () => {});
-      }, () => {});
-    } else {
-      return;
+    var files = event.GetAlFilesFromCache();
+    var cppsolution_dir = path.join(vscode.workspace.rootPath, '.cppsolution');
+    var all_files = path.join(cppsolution_dir, 'all_files');
+    if (!fs.existsSync(cppsolution_dir)) {
+      fs.mkdirSync(cppsolution_dir)
     }
+
+    if (fs.existsSync(all_files)) {
+      fs.unlinkSync(all_files);
+    }
+
+    for (var i = 0; i < files.length; i++) {
+      fs.writeFileSync(all_files, files[i] + '\n', {flag: 'a'});
+    }
+
+    const terminal = GetBuildTerminal();
+    terminal.show();
+    if (process.platform === 'win32') {
+      terminal.sendText('cls');
+    } else {
+      terminal.sendText('reset');
+    }
+
+    terminal.sendText(
+        'cat ' + all_files + ' | xargs grep -n --color=always "' +
+        search_value + '" | sed -e $\'s/: /\\\\\\n\\\\\\t/\'');
   }
 }
 
@@ -478,6 +507,7 @@ export class TreeViewProviderProjectsCommands {
     this.commands_.set('CleanProject', new CleanProjectCommand(provider));
     this.commands_.set('ChangeConfig', new ChangeConfigCommand(provider));
     this.commands_.set('FindFile', new FindFileCommand(provider));
+    this.commands_.set('FindSymbols', new FindSymbolsCommand(provider));
     this.commands_.set('FindInSolution', new FindInSolutionCommand(provider));
     this.commands_.set('SelectConfig', new SelectConfigCommand(provider));
     this.commands_.set('Refresh', new RefreshCommand(provider));

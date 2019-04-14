@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 
 import * as model from '../Model/project';
 import * as global from '../utils/globals';
+import * as symbolize from '../utils/symbolize'
 import * as item from '../View/item';
 
 
@@ -77,6 +78,7 @@ export abstract class TreeViewProviderProjects implements
 
   constructor(files: string[]) {
     // write launch.json and tasks.json
+    var all_projects: model.Project[] = [];
 
     for (var i = 0; i < files.length; i++) {
       var name = path.basename(files[i]);
@@ -90,10 +92,11 @@ export abstract class TreeViewProviderProjects implements
       var [projects, configs] = this.GetProjects(files[i]);
       this.projects_[sln_name] = projects;
       this.configs_[sln_name] = configs;
+      all_projects = all_projects.concat(projects)
     }
 
-
     this.Refresh();
+    symbolize.Symbolize(all_projects)
   }
 
   protected abstract GetProjects(root_file: string):

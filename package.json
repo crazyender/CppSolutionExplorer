@@ -60,8 +60,13 @@
 			},
 			{
 				"command": "CppSolutionExplorer.FindInSolution",
-				"title": "Search in files",
+				"title": "Search in solution",
 				"icon": "icons/search.svg"
+			},
+			{
+				"command": "CppSolutionExplorer.FindSymbols",
+				"title": "Find symbols",
+				"icon": "icons/find.svg"
 			},
 			{
 				"command": "CppSolutionExplorer.AddFile",
@@ -77,6 +82,12 @@
 			}
 		],
 		"menus": {
+			"editor/context": [
+				{
+					"command": "CppSolutionExplorer.FindInSolution",
+					"group": "0_find"
+				}
+			],
 			"view/item/context": [
 				{
 					"command": "CppSolutionExplorer.GenerateCMake",
@@ -158,6 +169,10 @@
 			{
 				"command": "CppSolutionExplorer.FindInSolution",
 				"key": "alt+shift+f"
+			},
+			{
+				"command": "CppSolutionExplorer.FindSymbols",
+				"key": "alt+shift+s"
 			},
 			{
 				"command": "CppSolutionExplorer.FindFile",
