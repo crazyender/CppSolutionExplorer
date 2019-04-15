@@ -22,21 +22,25 @@ Cpp Solution Explorer will make vscode more "Visual Studio" likely, with the hel
 Also you can build/rebuild/clean in project view.
 
 ## Features
-### Load cmake project automatically
+- Load cmake project automatically
 ![](img/2019-03-17-21-10-32.png)
 
-### Reload cmake project after CMakeLists.txt changes
+- Reload cmake project after CMakeLists.txt changes
 ![](img/2019-03-17-21-12-32.png)
 
-### Auto generate c_cpp_property.json, launch.json and tasks.json, makes auto-complete, build and debug works
+- Auto generate c_cpp_property.json, launch.json and tasks.json, makes auto-complete, build and debug works
 ![](img/2019-03-17-21-14-23.png)
 ![](img/2019-03-17-21-16-16.png)
 
-### You can also build/rebuild/clean target from inside project view
+- You can also build/rebuild/clean target from inside project view
 ![](img/2019-03-17-21-17-11.png)
 
-### Pickup a file from quick-pickup panel (shift+alt+o/shift+option+o)
+- Search strings in all files under solution (shift+alt+f/shift+option+f)
+
+- Pickup a file from quick-pickup panel (shift+alt+o/shift+option+o)
 ![](img/2019-04-14-13-07-57.png)
+
+- Pickup a c++ function from quick-pickup panel (shift+alt+s/shift+option+s)
 
 
 ## Inspiration

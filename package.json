@@ -7,7 +7,7 @@
 		"type": "Github",
 		"url": "https://github.com/crazyender/CppSolutionExplorer"
 	},
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"engines": {
 		"vscode": "^1.31.0"
 	},
@@ -192,7 +192,8 @@
 		"@types/node": "^10.12.27",
 		"tslint": "^5.13.1",
 		"typescript": "^3.3.3333",
-		"vscode": "^1.1.30"
+		"vscode": "^1.1.30",
+		"copyfiles": "*"
 	},
 	"dependencies": {
 		"xml2js": "*",

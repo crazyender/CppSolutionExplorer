@@ -1,3 +1,7 @@
+## [0.0.3]
+### Find functions in solution
+- Find c++ functions in solution  with pickup panel
+
 ## [0.0.2]
 ### Find files in solution
 - Find files in solutoin with pickup panel

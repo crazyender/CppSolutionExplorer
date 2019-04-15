@@ -92,11 +92,11 @@ export abstract class TreeViewProviderProjects implements
       var [projects, configs] = this.GetProjects(files[i]);
       this.projects_[sln_name] = projects;
       this.configs_[sln_name] = configs;
-      all_projects = all_projects.concat(projects)
+      all_projects = all_projects.concat(projects);
     }
 
     this.Refresh();
-    symbolize.Symbolize(all_projects)
+    symbolize.Symbolize(all_projects);
   }
 
   protected abstract GetProjects(root_file: string):

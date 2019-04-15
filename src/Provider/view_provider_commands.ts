@@ -22,6 +22,9 @@ function GetBuildTerminal(): vscode.Terminal {
   });
   if (!terminal) {
     terminal = vscode.window.createTerminal('build');
+    if (process.platform === 'win32') {
+      (terminal as vscode.Terminal).sendText('cmd', true);
+    }
   }
   return terminal;
 }
@@ -225,13 +228,13 @@ class FindSymbolsCommand extends AbsCommand {
   }
 
   async Run(item: view.ProjectViewItem): Promise<void> {
-    var symbols = symbolize.all_global_symbols
+    var symbols = symbolize.all_global_symbols;
     var items: PickFileItem[] = [];
     for (var i = 0; i < symbols.length; i++) {
       var pick: PickFileItem = new PickFileItem();
-      pick.label = symbols[i].name
-      pick.description = symbols[i].line.toString()
-      pick.detail = symbols[i].file
+      pick.label = symbols[i].name;
+      pick.description = symbols[i].line.toString();
+      pick.detail = symbols[i].file;
       items.push(pick);
     }
     var selected_file = await vscode.window.showQuickPick(
@@ -241,21 +244,17 @@ class FindSymbolsCommand extends AbsCommand {
       return;
     }
 
-    let options:
-        vscode.TextDocumentShowOptions = {preview: false, preserveFocus: true};
-    let document =
-        await vscode.workspace.openTextDocument(selected_file.detail);
-    vscode.window.showTextDocument(document, options);
-
-
     if (selected_file.description) {
-      var line = +selected_file.description
+      var line = +selected_file.description;
       var sel = new vscode.Selection(line - 1, 0, line - 1, 0);
-      if (vscode.window.activeTextEditor) {
-        vscode.window.activeTextEditor.selection = sel;
-        vscode.window.activeTextEditor.revealRange(
-            sel, vscode.TextEditorRevealType.Default);
-      }
+      let options: vscode.TextDocumentShowOptions = {
+        preview: false,
+        preserveFocus: true,
+        selection: sel
+      };
+      let document =
+          await vscode.workspace.openTextDocument(selected_file.detail);
+      vscode.window.showTextDocument(document, options);
     }
   }
 }
@@ -293,20 +292,6 @@ class FindInSolutionCommand extends AbsCommand {
       search_value = user_input;
     }
 
-    var files = event.GetAlFilesFromCache();
-    var cppsolution_dir = path.join(vscode.workspace.rootPath, '.cppsolution');
-    var all_files = path.join(cppsolution_dir, 'all_files');
-    if (!fs.existsSync(cppsolution_dir)) {
-      fs.mkdirSync(cppsolution_dir)
-    }
-
-    if (fs.existsSync(all_files)) {
-      fs.unlinkSync(all_files);
-    }
-
-    for (var i = 0; i < files.length; i++) {
-      fs.writeFileSync(all_files, files[i] + '\n', {flag: 'a'});
-    }
 
     const terminal = GetBuildTerminal();
     terminal.show();
@@ -316,9 +301,28 @@ class FindInSolutionCommand extends AbsCommand {
       terminal.sendText('reset');
     }
 
+    var cppsolution_dir = path.join(vscode.workspace.rootPath, '.cppsolution');
+    var all_files_log = path.join(cppsolution_dir, 'all_files');
+
+    var cat = '';
+    var xargs = '';
+    var grep = '';
+    var sed = '';
+    if (process.platform === 'win32') {
+      var tool_path = path.join(__dirname, '..', 'utils');
+      tool_path = path.normalize(tool_path).split('\\').join('/');
+      cat = '"' + path.join(tool_path, 'cat.exe') + '"';
+      xargs = '"' + path.join(tool_path, 'xargs.exe') + '"';
+      grep = '"' + path.join(tool_path, 'grep.exe') + '"';
+    } else {
+      cat = 'cat';
+      xargs = 'xargs';
+      grep = 'grep';
+    }
+
     terminal.sendText(
-        'cat ' + all_files + ' | xargs grep -n --color=always "' +
-        search_value + '" | sed -e $\'s/: /\\\\\\n\\\\\\t/\'');
+        cat + ' ' + all_files_log + ' | ' + xargs + ' ' + grep +
+        ' -n --color=always "' + search_value);
   }
 }
 

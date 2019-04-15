@@ -15,11 +15,14 @@ def GetSymbolFiles(p, f):
     if sys.platform != "win32" and len(f) > 1 and f[0] == '/':
         f = f[1:]
     elif sys.platform == "win32" and len(f) > 2 and f[1] == ':':
-        f = f[2:]
+        f = f[3:]
     result_path = os.path.join(p, f)
 
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    try:
+        if not os.path.exists(result_path):
+            os.makedirs(result_path)
+    except:
+        pass
     result_file = os.path.join(result_path, "symbol")
     content_hash_file = os.path.join(result_path, "content")
     return (result_file, content_hash_file)
@@ -42,18 +45,22 @@ class Translator:
             self.out_dir, self.parse_file)
 
         content_hash = time.strftime(
-            '%Y%m%d%H%M%S%f', time.gmtime(os.path.getmtime(self.parse_file)))
+            '%Y%m%d%H%M%S', time.gmtime(os.path.getmtime(self.parse_file)))
 
         try:
             with open(content_hash_file, "w") as f:
                 f.write(content_hash)
         except:
+            sys.stderr.write(
+                "Error: can not open content file {}\n".format(content_hash_file))
             return -1
 
         try:
             with open(result_file, "w") as f:
                 f.write(json_str)
         except:
+            sys.stderr.write(
+                "Error: can not open result file {}\n".format(result_file))
             return -1
 
         return 0
@@ -85,7 +92,9 @@ class Translator:
             return self.__travel_next__(node)
 
     def GenerateTypeDef(self, node):
+        """
         self.GenerateCurrent(node)
+        """
 
     def GenerateCurrent(self, node):
         symbol_name = self.GetFullSymbolName()
@@ -97,6 +106,7 @@ class Translator:
         result["global"].append(symbol)
 
     def GenerateEnum(self, node):
+        """
         self.GenerateCurrent(node)
 
         for c in node.get_children():
@@ -107,13 +117,18 @@ class Translator:
             symbol["line"] = c.location.line
             symbol["offset"] = c.location.offset
             result["global"].append(symbol)
+        """
 
     def GenerateClass(self, node):
+        """
         self.GenerateCurrent(node)
+        """
         self.__travel_next__(node)
 
     def GenerateField(self, node):
+        """
         self.GenerateCurrent(node)
+        """
 
     def GenerateCxxMethod(self, node):
         self.GenerateCurrent(node)
@@ -125,13 +140,16 @@ class Translator:
         self.GenerateCurrent(node)
 
     def GenerateFreeFunction(self, node):
+        """
         self.GenerateCurrent(node)
+        """
 
     def __travel__(self, node):
         # type(Translator, Object) => None
         if node.location.file:
             translate_file = node.location.file.name
-            translate_file = os.path.normpath(translate_file)
+            translate_file = os.path.normpath(
+                translate_file).replace('\\', '/')
             if self.parse_file != translate_file:
                 return
 
@@ -151,9 +169,13 @@ class Translator:
 def main(argv):
     out_dir = argv[0]
     input_file = argv[1]
+    input_file = os.path.normpath(input_file).replace('\\', '/')
 
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+    try:
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+    except:
+        pass
 
     result_file, content_hash_file = GetSymbolFiles(
         out_dir, input_file)
@@ -164,7 +186,7 @@ def main(argv):
             content_hash = f.read()
 
         real_hash = time.strftime(
-            '%Y%m%d%H%M%S%f', time.gmtime(os.path.getmtime(input_file)))
+            '%Y%m%d%H%M%S', time.gmtime(os.path.getmtime(input_file)))
 
         if content_hash == real_hash:
             with open(result_file, 'r') as f:
@@ -175,6 +197,9 @@ def main(argv):
     if sys.platform == "darwin":
         clang.cindex.Config.set_library_file(
             "/Library/Developer/CommandLineTools/usr/lib/libclang.dylib")
+    elif sys.platform == "win32":
+        clang.cindex.Config.set_library_file(
+            os.path.join(os.path.dirname(__file__), "libclang.dll"))
     index = clang.cindex.Index.create()
     tu = index.parse(os.path.abspath(input_file), args=extra_args)
     translator = Translator(input_file,  out_dir, tu)
