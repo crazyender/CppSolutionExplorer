@@ -322,7 +322,8 @@ class FindInSolutionCommand extends AbsCommand {
 
     terminal.sendText(
         cat + ' ' + all_files_log + ' | ' + xargs + ' ' + grep +
-        ' -n --color=always "' + search_value);
+            ' -n --color=always "' + search_value + '"',
+        true);
   }
 }
 

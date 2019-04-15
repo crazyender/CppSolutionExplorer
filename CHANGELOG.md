@@ -1,3 +1,7 @@
+## [0.0.4]
+### Bug fix
+- Missing a '"' in find symbol command
+
 ## [0.0.3]
 ### Find functions in solution
 - Find c++ functions in solution  with pickup panel
