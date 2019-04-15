@@ -25,9 +25,11 @@ export function Symbolize(projects: model.Project[]): void {
   for (var i = 0; i < projects.length; i++) {
     var f = projects[i].GetFiles();
     for (var j = 0; j < f.length; j++) {
-      all_files[f[j]] = projects[i];
-      files.push(f[j]);
-      total++;
+      if (fs.existsSync(f[i])) {
+        all_files[f[j]] = projects[i];
+        files.push(f[j]);
+        total++;
+      }
     }
   }
   console.log('Total ' + total + ' files');
@@ -44,6 +46,23 @@ export function Symbolize(projects: model.Project[]): void {
 
   for (var i = 0; i < files.length; i++) {
     fs.writeFileSync(all_files_log, files[i] + '\n', {flag: 'a'});
+  }
+
+  var vs_config = vscode.workspace.getConfiguration('cpp_solution');
+  var libclang_path = vs_config.get<string>('libclang_path', '');
+  if (libclang_path === '' && process.platform === 'darwin') {
+    libclang_path =
+        '/Library/Developer/CommandLineTools/usr/lib/libclang.dylib';
+  }
+
+  if (libclang_path === '' || !fs.existsSync(libclang_path)) {
+    vscode.workspace.onDidChangeConfiguration(e => {
+      libclang_path = vs_config.get<string>('libclang_path', '');
+      if (libclang_path !== '' && fs.existsSync(libclang_path)) {
+        Symbolize(projects);
+      }
+    });
+    return;
   }
 
 
@@ -82,8 +101,8 @@ export function Symbolize(projects: model.Project[]): void {
           progress.report(
               {message: percentage.toString() + '%', increment: percentage});
         }
-        var cmd = 'python ' + python_file + ' ' + out_dir + ' ' + current_file +
-            ' ' + args;
+        var cmd = 'python ' + python_file + ' "' + libclang_path + '" ' +
+            out_dir + ' ' + current_file + ' ' + args;
         var proc = exec.spawn(cmd, {shell: true});
         var std_out_string = '';
         proc.stdout.on('data', (chunk) => {

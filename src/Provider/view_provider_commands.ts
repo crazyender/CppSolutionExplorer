@@ -21,9 +21,10 @@ function GetBuildTerminal(): vscode.Terminal {
     }
   });
   if (!terminal) {
-    terminal = vscode.window.createTerminal('build');
     if (process.platform === 'win32') {
-      (terminal as vscode.Terminal).sendText('cmd', true);
+      terminal = vscode.window.createTerminal('build', 'cmd.exe');
+    } else {
+      terminal = vscode.window.createTerminal('build');
     }
   }
   return terminal;

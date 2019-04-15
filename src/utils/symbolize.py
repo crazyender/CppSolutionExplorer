@@ -169,6 +169,7 @@ class Translator:
 def main(argv):
     out_dir = argv[0]
     input_file = argv[1]
+    libclang_path = argv[2]
     input_file = os.path.normpath(input_file).replace('\\', '/')
 
     try:
@@ -193,13 +194,8 @@ def main(argv):
                 print(f.read())
             return 0
 
-    extra_args = argv[2:]
-    if sys.platform == "darwin":
-        clang.cindex.Config.set_library_file(
-            "/Library/Developer/CommandLineTools/usr/lib/libclang.dylib")
-    elif sys.platform == "win32":
-        clang.cindex.Config.set_library_file(
-            os.path.join(os.path.dirname(__file__), "libclang.dll"))
+    clang.cindex.Config.set_library_file(libclang_path)
+    extra_args = argv[3:]
     index = clang.cindex.Index.create()
     tu = index.parse(os.path.abspath(input_file), args=extra_args)
     translator = Translator(input_file,  out_dir, tu)
