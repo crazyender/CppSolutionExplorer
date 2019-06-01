@@ -155,6 +155,7 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
   private GetWorkDir(gn_target_obj: any) {
     var work_dir: string = './';
+
     if (gn_target_obj.hasOwnProperty('build_dir')) {
       work_dir = gn_target_obj.build_dir;
     }
@@ -169,6 +170,24 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
       target = gn_target_obj.dependency_output_file;
     }
     var ret = new Map<string, string>();
+
+    if (target.endsWith('.stamp')) {
+      target = path.basename(target);
+      target = target.split('.')[0];
+      var t = this.GetType(gn_target_obj).get('');
+      if (t === 'create_bundle') {
+        if (!gn_target_obj.hasOwnProperty('bundle_data')) {
+          ret.set('', target);
+          return ret;
+        }
+        if (!gn_target_obj.bundle_data.hasOwnProperty('executable_dir')) {
+          ret.set('', target);
+          return ret;
+        }
+
+        target = gn_target_obj.bundle_data.executable_dir + target;
+      }
+    }
     ret.set('', target);
     return ret;
   }
@@ -180,6 +199,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
     }
     var work_dir = this.GetWorkDir(gn_target_obj).get('');
     var target = this.GetBinaryName(gn_target_obj).get('');
+    if (gn_target_obj.hasOwnProperty('dependency_output_file')) {
+      target = gn_target_obj.dependency_output_file
+    }
     var ret = new Map<string, string>();
     ret.set('', ninja + ' -C ' + work_dir + ' ' + target);
     return ret;
@@ -222,6 +244,9 @@ export class TreeViewProvider extends absprovider.TreeViewProviderProjects {
 
   private ValidTarget(gn_target_obj: any): boolean {
     var t = this.GetType(gn_target_obj).get('');
+    if (t === 'create_bundle') {
+      return true;
+    }
     if (t === 'shared_library' || t === 'loadable_module' ||
         t === 'executable') {
       return true;

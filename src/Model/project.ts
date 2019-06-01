@@ -229,7 +229,7 @@ export class Project extends AbsModel {
     var type = this.project_type_.get(globals.GlobalVarients.selected_config);
     type = type ? type : 'static_library';
 
-    if (type !== 'executable') {
+    if (type !== 'executable' && type !== 'create_bundle') {
       return undefined;
     }
     var config: LaunchConfiguration = new LaunchConfiguration();
